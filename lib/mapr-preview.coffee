@@ -10,12 +10,14 @@ module.exports = MaprPreview =
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('mapr-preview')
-    @toolBar.addSpacer()
+    @toolBar.addSpacer
+      priority: 99
 
     @toolBar.addButton
       icon: 'device-desktop',
       callback: 'mapr-preview:preview',
       tooltip: 'MapR Preview'
+      priority: 100
 
   activate: (state) ->
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
