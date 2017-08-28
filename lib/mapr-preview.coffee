@@ -1,5 +1,6 @@
 ConfigurationView = require './configuration-view'
 Configuration = require './util/configuration'
+PreviewView = require './preview-view'
 {CompositeDisposable} = require 'atom'
 
 module.exports = MaprPreview =
@@ -24,12 +25,17 @@ module.exports = MaprPreview =
     @subscriptions = new CompositeDisposable
 
     # Register command that toggles this view
-    @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:toggle': => @toggle()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
+
+    @subscriptions.add atom.workspace.addOpener (uri) ->
+      if uri.startsWith 'mpw://'
+        pv = new PreviewView()
+        pv.initialize()
+        return pv
 
   configure: ->
     console.log 'MaprPreview shown configuration'
-    @configuration = new Configuration()
-    @configurationView = new ConfigurationView(@configuration(),
+    @configurationView = new ConfigurationView(@configuration,
       () => @saveConfig(),
       () => @hideConfigure()
     )
@@ -47,7 +53,7 @@ module.exports = MaprPreview =
       @configuration.save()
       @hideConfigure()
 
-      #TODO: go on with preview
+      @preview()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
@@ -58,16 +64,22 @@ module.exports = MaprPreview =
     @panel = null
 
   deactivate: ->
-    @modalPanel.destroy()
+    @panel?.destroy()
     @subscriptions.dispose()
-    @maprPreviewView.destroy()
+    @configurationView?.destroy()
 
   serialize: ->
 
-  toggle: ->
-    console.log 'MaprPreview was toggled!'
+  preview: ->
+    console.log "Do preview"
 
-    if @modalPanel.isVisible()
-      @modalPanel.hide()
+    @configuration = new Configuration()
+    if !(@configuration.exists() && @configuration.isValid())
+      @configure()
     else
-      @modalPanel.show()
+      # preview = new PreviewView()
+      # preview.initialize("path/to/file")
+      # atom.workspace.addRightPanel
+      #   item: preview
+      #   visible: true
+      atom.workspace.open("mpw://test")
