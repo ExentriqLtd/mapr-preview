@@ -10,7 +10,7 @@ class PreviewView extends HTMLElement
     webview = document.createElement "webview"
 
     webview.id = 'mapr-webview'
-    webview.setAttribute 'src', "https://www.mapr.com/"
+    webview.setAttribute 'src', "http://localhost:8080/#{file}"
     panelBody.appendChild webview
 
   getTitle: () -> return "MapR Preview"

@@ -1,6 +1,9 @@
 ConfigurationView = require './configuration-view'
 Configuration = require './util/configuration'
+RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
+git = require './util/git'
+
 {CompositeDisposable} = require 'atom'
 
 module.exports = MaprPreview =
@@ -8,6 +11,7 @@ module.exports = MaprPreview =
   panel: null
   subscriptions: null
   configuration: null
+  renderingProcessManager: null
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('mapr-preview')
@@ -30,7 +34,7 @@ module.exports = MaprPreview =
     @subscriptions.add atom.workspace.addOpener (uri) ->
       if uri.startsWith 'mpw://'
         pv = new PreviewView()
-        pv.initialize()
+        pv.initialize(uri.substring(6))
         return pv
 
   configure: ->
@@ -77,9 +81,25 @@ module.exports = MaprPreview =
     if !(@configuration.exists() && @configuration.isValid())
       @configure()
     else
-      # preview = new PreviewView()
-      # preview.initialize("path/to/file")
-      # atom.workspace.addRightPanel
-      #   item: preview
-      #   visible: true
-      atom.workspace.open("mpw://test")
+      if @configuration.shouldClone()
+        conf = @configuration.get()
+        @doClone(conf.repoUrl, conf.targetDir)
+      else
+        @doPreview()
+
+  doPreview: () ->
+    conf = @configuration.get()
+    if !@renderingProcessManager?
+      @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
+
+    @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
+      .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning")
+
+  doClone: () ->
+    conf = @configuration.get()
+    git.clone conf.repoUrl, @configuration.getTargetDir()
+      .then () =>
+        @doPreview()
+      .fail () ->
+        atom.notifications.addError "Error occurred",
+          description: "Unable to download mapr.com project"

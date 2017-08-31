@@ -1,17 +1,30 @@
 {app} = require 'remote'
 CSON = require('cson')
+path = require('path')
 
 {File, Directory} = require 'atom'
 FILE_PATH = app.getPath("userData") + "/" + "mapr-preview.cson"
-keys = ["contentDir", "targetDir"]
+keys = ["contentDir", "targetDir", "repoUrl"]
+
+getRepoName = (uri) ->
+  tmp = uri.split('/')
+  name = tmp[tmp.length-1]
+  tmp = name.split('.')
+  [..., last] = tmp
+  if last is 'git'
+    name = tmp[...-1].join('.')
+  else
+    name
 
 class Configuration
   @labels:
+    repoUrl: "MapR.com Project Clone URL"
+    targetDir: "MapR.com Project Directory"
     contentDir: "MapR.com-content Project Directory"
-    targetDir: "Mapr.com Project Directory"
 
   @reasons:
-    contentDir: "MapR.com-content Project Directory must be set"
+    repoUrl: "MapR.com Project Clone URL must be set"
+    contentDir: "MapR.com-content Project Directory exist"
     targetDir: "MapR.com Project Directory must be set"
 
   @validators:
@@ -34,9 +47,13 @@ class Configuration
     isEmail: (value) ->
       re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       return re.test(value)
+    dirExists: (value) ->
+      dir = new Directory(value)
+      return dir.existsSync()
 
   @validationRules:
-    contentDir: @validators.isNotBlank
+    repoUrl: @validators.isValidRepo
+    contentDir: @validators.dirExists
     targetDir: @validators.isNotBlank
 
   constructor: () ->
@@ -93,5 +110,11 @@ class Configuration
 
   isStringEmpty: (s) ->
     return !(s && s.trim && s.trim().length > 0)
+
+  getTargetDir: () ->
+    return path.join(@conf.targetDir, getRepoName(@conf.repoUrl))
+
+  shouldClone: () ->
+    return !Configuration.validators.dirExists(@getTargetDir())
 
 module.exports = Configuration
