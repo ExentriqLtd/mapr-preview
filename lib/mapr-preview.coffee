@@ -37,6 +37,11 @@ module.exports = MaprPreview =
         pv.initialize(uri.substring(6))
         return pv
 
+    @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
+      console.log "Destroy pane item", event
+      if event.item.classList && event.item.classList[0] == "mapr-preview"
+        @renderingProcessManager.killPagePreview()
+
   configure: ->
     console.log 'MaprPreview shown configuration'
     @configurationView = new ConfigurationView(@configuration,
@@ -88,12 +93,15 @@ module.exports = MaprPreview =
         @doPreview()
 
   doPreview: () ->
+    # TODO: intercept currently open .md, check if under project mapr.content
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
 
     @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
-      .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning")
+      .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning/")
+      .fail (error) -> atom.notifications.addError "Error occurred",
+        description: error.message
 
   doClone: () ->
     conf = @configuration.get()

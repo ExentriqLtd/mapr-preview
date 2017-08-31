@@ -9,21 +9,30 @@ class RenderingProcessManager
   pagePreview: (relativeMdPath) ->
     deferred = q.defer()
     returned = false
+    errors = []
     if @pageProcess?
-      return
+      deferred.reject message: "Rendering process is already running"
+    else
+      command = "node"
+      args = ["preview.js", "#{relativeMdPath}", "#{@contentDir}"]
+      stdout = (output) ->
+        # console.log "Got line", output
+        if !returned && output.trim().startsWith("[metalsmith-serve]")
+          window.setTimeout () ->
+            returned = true
+            deferred.resolve true
+          , 2500
+      stderr = (output) ->
+        console.error output
+        errors.push output
+      exit = (code) ->
+        console.log("pagePreview exited with #{code}")
+        if code && code > 0 && !returned
+          deferred.reject errors.join "\n"
 
-    command = "node"
-    args = ["preview.js", "#{relativeMdPath}", "#{@contentDir}"]
-    stdout = (output) ->
-      if !returned && output.trim().startsWith("[metalsmith]")
-        returned = true
-        deferred.resolve true
-    stderr = (output) ->
-      console.error output
-    exit = (code) -> console.log("pagePreview exited with #{code}")
-    options =
-      cwd: @maprDir
-    @pageProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
+      options =
+        cwd: @maprDir
+      @pageProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
 
