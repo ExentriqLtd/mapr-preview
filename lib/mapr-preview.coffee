@@ -4,7 +4,7 @@ RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
 git = require './util/git'
 
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, TextEditor} = require 'atom'
 
 module.exports = MaprPreview =
   maprPreviewView: null
@@ -95,14 +95,26 @@ module.exports = MaprPreview =
 
   doPreview: () ->
     # TODO: intercept currently open .md, check if under project mapr.content
+    currentPaneItem = atom.workspace.getActivePaneItem()
+    if !currentPaneItem instanceof TextEditor
+      return
+
+    path = currentPaneItem.getPath()
+    if !@configuration.isPathFromProject path || !path.endsWith('.md')
+      return
+
+    path = @configuration.relativePath(path)
+
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
       atom.notifications.addInfo "Preview rendering started",
         description: "It may take a while. A new tab will open when ready."
 
-    @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
-      .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning/")
+    # @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
+    @renderingProcessManager.pagePreview(path)
+      # .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning/")
+      .then () => @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
       .fail (error) -> atom.notifications.addError "Error occurred",
         description: error.message
 
