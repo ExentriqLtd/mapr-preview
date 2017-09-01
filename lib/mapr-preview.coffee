@@ -99,7 +99,11 @@ module.exports = MaprPreview =
     if !currentPaneItem instanceof TextEditor
       return
 
-    path = currentPaneItem.getPath()
+    if currentPaneItem.getPath
+      path = currentPaneItem.getPath()
+    else
+      return
+      
     if !@configuration.isPathFromProject path || !path.endsWith('.md')
       return
 
