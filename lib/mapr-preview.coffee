@@ -76,6 +76,7 @@ module.exports = MaprPreview =
     @panel?.destroy()
     @subscriptions.dispose()
     @configurationView?.destroy()
+    @renderingProcessManager?.killPagePreview()
 
   serialize: ->
 
