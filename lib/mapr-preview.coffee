@@ -12,13 +12,14 @@ module.exports = MaprPreview =
   subscriptions: null
   configuration: null
   renderingProcessManager: null
+  thebutton: null
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('mapr-preview')
     @toolBar.addSpacer
       priority: 99
 
-    @toolBar.addButton
+    @thebutton = @toolBar.addButton
       icon: 'device-desktop',
       callback: 'mapr-preview:preview',
       tooltip: 'MapR Preview'
@@ -94,7 +95,6 @@ module.exports = MaprPreview =
         @doPreview()
 
   doPreview: () ->
-    # TODO: intercept currently open .md, check if under project mapr.content
     currentPaneItem = atom.workspace.getActivePaneItem()
     if !currentPaneItem instanceof TextEditor
       return
@@ -104,16 +104,17 @@ module.exports = MaprPreview =
       return
 
     path = @configuration.relativePath(path)
+    if path.startsWith '/'
+      path = path.substring(1)
 
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
       atom.notifications.addInfo "Preview rendering started",
-        description: "It may take a while. A new tab will open when ready."
+        description: "It may take a while. A new tab will open when the preview is ready."
 
-    # @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
+    cleanedUpPath = path.replace(/\\/g,"/").substring(0, path.lastIndexOf '/')
     @renderingProcessManager.pagePreview(path)
-      # .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning/")
       .then () => @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
       .fail (error) -> atom.notifications.addError "Error occurred",
         description: error.message

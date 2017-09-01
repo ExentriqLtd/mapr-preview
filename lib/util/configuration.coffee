@@ -117,4 +117,15 @@ class Configuration
   shouldClone: () ->
     return !Configuration.validators.dirExists(@getTargetDir())
 
+  isPathFromProject: (path) ->
+    root = @conf.contentDir
+    return path.indexOf(root) >= 0
+
+  #strip down mapr.com-content path from the given path
+  relativePath: (path) ->
+    root = @conf.contentDir
+    if root.endsWith path.sep
+      root = root.substring(0, root.length-2)
+    return path.replace(root, '')
+
 module.exports = Configuration
