@@ -98,6 +98,8 @@ module.exports = MaprPreview =
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
+      atom.notifications.addInfo "Preview rendering started",
+        description: "It may take a while. A new tab will open when ready."
 
     @renderingProcessManager.pagePreview("en/company/leadership/teddunning/index.md")
       .then () => @renderingPane = atom.workspace.open("mpw://en/company/leadership/teddunning/")
