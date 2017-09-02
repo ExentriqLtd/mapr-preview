@@ -3,8 +3,8 @@ CSON = require('cson')
 path = require('path')
 
 {File, Directory} = require 'atom'
-FILE_PATH = app.getPath("userData") + "/" + "mapr-preview.cson"
-keys = ["contentDir", "targetDir", "repoUrl"]
+
+FILE_PATH = path.join(app.getPath("userData"), "mapr-preview.cson")
 
 getRepoName = (uri) ->
   tmp = uri.split('/')
@@ -128,4 +128,5 @@ class Configuration
       root = root.substring(0, root.length-2)
     return path.replace(root, '')
 
+keys = Object.keys(Configuration.labels)
 module.exports = Configuration
