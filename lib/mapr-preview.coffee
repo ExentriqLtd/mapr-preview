@@ -13,6 +13,7 @@ module.exports = MaprPreview =
   configuration: null
   renderingProcessManager: null
   thebutton: null
+  previewView: null
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('mapr-preview')
@@ -32,16 +33,17 @@ module.exports = MaprPreview =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
 
-    @subscriptions.add atom.workspace.addOpener (uri) ->
+    @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri.startsWith 'mpw://'
-        pv = new PreviewView()
-        pv.initialize(uri.substring(6))
-        return pv
+        @previewView = new PreviewView()
+        return @previewView
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
       console.log "Destroy pane item", event
       if event.item.classList && event.item.classList[0] == "mapr-preview"
         @renderingProcessManager.killPagePreview()
+        @previewView.destroy() if @previewView.destroy
+        @previewView = null
 
   configure: ->
     console.log 'MaprPreview shown configuration'
@@ -103,7 +105,7 @@ module.exports = MaprPreview =
       path = currentPaneItem.getPath()
     else
       return
-      
+
     if !@configuration.isPathFromProject path || !path.endsWith('.md')
       return
 
@@ -118,8 +120,9 @@ module.exports = MaprPreview =
         description: "It may take a while. A new tab will open when the preview is ready."
 
     cleanedUpPath = path.replace(/\\/g,"/").substring(0, path.lastIndexOf '/')
+    @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
     @renderingProcessManager.pagePreview(path)
-      .then () => @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
+      .then () => @previewView.initialize(cleanedUpPath)
       .fail (error) -> atom.notifications.addError "Error occurred",
         description: error.message
 
