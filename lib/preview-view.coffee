@@ -1,17 +1,27 @@
 class PreviewView extends HTMLElement
 
-  initialize: (file) ->
+  constructor: () ->
+
+  initialize: () ->
     @classList.add("mapr-preview")
     # panel body
-    panelBody = document.createElement("div")
-    panelBody.classList.add("panel-webview")
-    @appendChild(panelBody)
+    @panelBody = document.createElement("div")
+    @panelBody.classList.add("panel-webview")
+    @appendChild(@panelBody)
 
+    @temporaryPanel = document.createElement("div")
+    @temporaryPanel.classList.add "mpw-temp"
+    @temporaryPanel.innerText = "Loading..."
+    @panelBody.appendChild @temporaryPanel
+
+  setFile: (file) ->
     webview = document.createElement "webview"
 
     webview.id = 'mapr-webview'
     webview.setAttribute 'src', "http://localhost:8080/#{file}"
-    panelBody.appendChild webview
+
+    @panelBody.removeChild @temporaryPanel
+    @panelBody.appendChild webview
 
   getTitle: () -> return "MapR Preview"
 

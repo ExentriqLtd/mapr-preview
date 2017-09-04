@@ -119,6 +119,7 @@ class Configuration
 
   isPathFromProject: (path) ->
     root = @conf.contentDir
+    # console.log "Configuration::isPathFromProject(#{path})", root
     return path.indexOf(root) >= 0
 
   #strip down mapr.com-content path from the given path

@@ -36,6 +36,7 @@ module.exports = MaprPreview =
     @subscriptions.add atom.workspace.addOpener (uri) =>
       if uri.startsWith 'mpw://'
         @previewView = new PreviewView()
+        @previewView.initialize()
         return @previewView
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
@@ -116,13 +117,13 @@ module.exports = MaprPreview =
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
-      atom.notifications.addInfo "Preview rendering started",
-        description: "It may take a while. A new tab will open when the preview is ready."
+      # atom.notifications.addInfo "Preview rendering started",
+      #   description: "It may take a while. A new tab will open when the preview is ready."
 
     cleanedUpPath = path.replace(/\\/g,"/").substring(0, path.lastIndexOf '/')
     @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
     @renderingProcessManager.pagePreview(path)
-      .then () => @previewView.initialize(cleanedUpPath)
+      .then () => @previewView.setFile(cleanedUpPath)
       .fail (error) -> atom.notifications.addError "Error occurred",
         description: error.message
 
