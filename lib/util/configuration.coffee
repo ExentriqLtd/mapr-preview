@@ -120,7 +120,7 @@ class Configuration
       return
 
     innerAweConf = aweConf.get()
-    @conf = {}
+
     @conf.contentDir = path.join(innerAweConf.cloneDir, getRepoName(innerAweConf.repoUrl))
     @conf.repoOwner = innerAweConf.repoOwner
     @conf.username = innerAweConf.repoUsername

@@ -87,7 +87,9 @@ module.exports = MaprPreview =
       @configuration.save()
       @hideConfigure()
 
-      @preview()
+      # @preview()
+      atom.notifications.addInfo("MapR.com project is being downloaded")
+      @doClone()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
@@ -151,8 +153,9 @@ module.exports = MaprPreview =
   doClone: () ->
     conf = @configuration.get()
     git.clone conf.repoUrl, @configuration.getTargetDir()
-      .then () =>
-        @doPreview()
+      .then () ->
+        # @doPreview()
+        atom.restartApplication()
       .fail () ->
         atom.notifications.addError "Error occurred",
           description: "Unable to download mapr.com project"
