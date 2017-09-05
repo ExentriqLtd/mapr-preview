@@ -156,3 +156,6 @@ module.exports = MaprPreview =
       .fail () ->
         atom.notifications.addError "Error occurred",
           description: "Unable to download mapr.com project"
+
+  isBitbucketRepo: () ->
+    @configuration.get().repoUrl.indexOf('bitbucket.org') > 0

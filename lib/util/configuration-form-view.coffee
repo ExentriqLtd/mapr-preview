@@ -10,6 +10,9 @@ class ConfigurationFormView extends FormView
     @addRow @createFieldRow("repoUrl", "text", Configuration.labels.repoUrl)
     @addRow @createFieldRow("contentDir", "directory", Configuration.labels.contentDir)
     @addRow @createFieldRow("targetDir", "directory", Configuration.labels.targetDir)
+    @addRow @createFieldRow("repoOwner", "text", Configuration.labels.repoOwner)
+    @addRow @createFieldRow("username", "text", Configuration.labels.username)
+    @addRow @createFieldRow("password", "password", Configuration.labels.password)
 
 module.exports = document.registerElement('mpw-configuration-form-view',
   prototype: ConfigurationFormView.prototype,

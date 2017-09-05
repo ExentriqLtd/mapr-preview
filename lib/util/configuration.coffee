@@ -23,11 +23,17 @@ class Configuration
     repoUrl: "MapR.com Project Clone URL"
     targetDir: "MapR.com Project Directory"
     contentDir: "MapR.com-content Project Directory"
+    repoOwner: "BitBucket Repository Owner"
+    username: "BitBucket API Username"
+    password: "BitBucket API Password"
 
   @reasons:
     repoUrl: "MapR.com Project Clone URL must be a valid SSH repository"
-    contentDir: "MapR.com-content Project Directory exist"
+    contentDir: "MapR.com-content Project Directory must exist"
     targetDir: "MapR.com Project Directory must be set"
+    repoOwner: "BitBucket Repository Owner must be set"
+    username: "BitBucket API Username must be set"
+    password: "BitBucket API Password must be set"
 
   @validators:
     isValidRepo: (value) ->
@@ -57,6 +63,9 @@ class Configuration
     repoUrl: @validators.isValidRepo
     contentDir: @validators.dirExists
     targetDir: @validators.isNotBlank
+    username: @validators.isNotBlank
+    password: @validators.isNotBlank
+    repoOwner: @validators.isNotBlank
 
   constructor: () ->
     @read()
@@ -113,6 +122,9 @@ class Configuration
     innerAweConf = aweConf.get()
     @conf = {}
     @conf.contentDir = path.join(innerAweConf.cloneDir, getRepoName(innerAweConf.repoUrl))
+    @conf.repoOwner = innerAweConf.repoOwner
+    @conf.username = innerAweConf.repoUsername
+    @conf.password = innerAweConf.password
 
   isAweConfValid: () ->
     aweConf = new AWEConfiguration()
