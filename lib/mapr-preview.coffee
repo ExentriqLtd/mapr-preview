@@ -65,6 +65,10 @@ module.exports = MaprPreview =
 
   configure: ->
     console.log 'MaprPreview shown configuration'
+
+    if !(@configuration.exists() && @configuration.isValid())
+      @configuration.acquireFromAwe()
+
     @configurationView = new ConfigurationView(@configuration,
       () => @saveConfig(),
       () => @hideConfigure()

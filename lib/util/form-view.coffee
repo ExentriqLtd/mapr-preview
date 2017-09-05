@@ -93,6 +93,7 @@ class FormView extends HTMLElement
 
   setValues: (data) ->
     @reset()
+    console.log "FormView::setValues", data
     Object.keys(data).forEach (k) =>
       field = @fields.find (x) -> x.id == k
       field?.value = data[k] if field?.getAttribute("type") in ["text","password","select"]

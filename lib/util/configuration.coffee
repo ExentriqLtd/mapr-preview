@@ -25,7 +25,7 @@ class Configuration
     contentDir: "MapR.com-content Project Directory"
 
   @reasons:
-    repoUrl: "MapR.com Project Clone URL must be set"
+    repoUrl: "MapR.com Project Clone URL must be a valid SSH repository"
     contentDir: "MapR.com-content Project Directory exist"
     targetDir: "MapR.com Project Directory must be set"
 
@@ -76,13 +76,21 @@ class Configuration
         @conf = null
     else
       @confFile.create()
-      @conf = null
+      @conf = {
+        repoUrl: ''
+      }
       return @conf
 
   get: () ->
     if !@conf
-      @conf = {}
-    # console.log "configuration::get", @conf
+      @conf = {
+          ####
+          # Empty Object
+          # initialization
+          ####
+      }
+
+    console.log "configuration::get", @conf
     return @conf
 
   set: (c) ->
@@ -96,6 +104,15 @@ class Configuration
     #@confFile.create().then =>
     @confFile.writeSync(s)
     # console.log "configuration::save", @conf
+
+  acquireFromAwe: () ->
+    aweConf = new AWEConfiguration()
+    if !(aweConf.exists() && aweConf.isValid())
+      return
+
+    innerAweConf = aweConf.get()
+    @conf = {}
+    @conf.contentDir = path.join(innerAweConf.cloneDir, getRepoName(innerAweConf.repoUrl))
 
   isAweConfValid: () ->
     aweConf = new AWEConfiguration()
