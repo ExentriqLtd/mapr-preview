@@ -1,33 +1,32 @@
 {app} = require 'remote'
 CSON = require('cson')
-path = require('path')
-
-AWEConfiguration = require './configuration-adv-web-editor'
+path = require 'path'
 
 {File, Directory} = require 'atom'
-
-FILE_PATH = path.join(app.getPath("userData"), "mapr-preview.cson")
-
-getRepoName = (uri) ->
-  tmp = uri.split('/')
-  name = tmp[tmp.length-1]
-  tmp = name.split('.')
-  [..., last] = tmp
-  if last is 'git'
-    name = tmp[...-1].join('.')
-  else
-    name
+FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
 
 class Configuration
   @labels:
-    repoUrl: "MapR.com Project Clone URL"
-    targetDir: "MapR.com Project Directory"
-    contentDir: "MapR.com-content Project Directory"
+    repoUrl: "Project Clone URL"
+    fullName: "Full Name"
+    email: "Your Email",
+    repoOwner: "Repository Owner"
+    username: "Username for Branches"
+    repoUsername: "Repository User Name"
+    password: "Password"
+    cloneDir: "Clone Directory"
+    advancedMode: "Advanced Mode"
 
   @reasons:
-    repoUrl: "MapR.com Project Clone URL must be set"
-    contentDir: "MapR.com-content Project Directory exist"
-    targetDir: "MapR.com Project Directory must be set"
+    repoUrl: "Project Clone URL must be a valid http://, https:// or SSH Git repository"
+    fullName: "Full Name must not be empty"
+    email: "Your Email must be a valid email address",
+    repoOwner: "Repository Owner must not be empty. It is required for pull requests."
+    username: "Username for Branches must not be empty. It is required to identify your branches."
+    repoUsername: "Repository User Name must not be empty. It is required by BitBucket API."
+    password: "Password must not be empty. It is required for pull requests."
+    cloneDir: "Clone Directory must be set"
+    advancedMode: "Advanced Mode"
 
   @validators:
     isValidRepo: (value) ->
@@ -49,14 +48,17 @@ class Configuration
     isEmail: (value) ->
       re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       return re.test(value)
-    dirExists: (value) ->
-      dir = new Directory(value)
-      return dir.existsSync()
 
   @validationRules:
     repoUrl: @validators.isValidRepo
-    contentDir: @validators.dirExists
-    targetDir: @validators.isNotBlank
+    fullName: @validators.isNotBlank
+    email: @validators.isEmail
+    repoOwner: @validators.isNotBlank
+    username: @validators.isNotBlank
+    repoUsername: @validators.isNotBlank
+    password: @validators.isNotBlank
+    cloneDir: @validators.isNotBlank
+    advancedMode: @validators.whatever
 
   constructor: () ->
     @read()
@@ -65,7 +67,7 @@ class Configuration
     return @confFile.existsSync()
 
   read: () ->
-    console.log "MaprPreview::read", FILE_PATH
+    console.log "AdvancedWebEditor::read", FILE_PATH
     @confFile = new File(FILE_PATH)
     if @exists()
       try
@@ -90,16 +92,15 @@ class Configuration
     # console.log "configuration::set", @conf
     return this
 
+  isHttp: ()->
+    return @conf.repoUrl.startsWith("http")
+
   save: () ->
-    console.log "MaprPreview::save", FILE_PATH
+    console.log "AdvancedWebEditor::save", FILE_PATH
     s = CSON.stringify(@conf)
     #@confFile.create().then =>
     @confFile.writeSync(s)
     # console.log "configuration::save", @conf
-
-  isAweConfValid: () ->
-    aweConf = new AWEConfiguration()
-    return aweConf.exists() && aweConf.isValid()
 
   isValid: () ->
     allKeys = @conf && Object.keys(@conf).filter (k) ->
@@ -117,23 +118,16 @@ class Configuration
   isStringEmpty: (s) ->
     return !(s && s.trim && s.trim().length > 0)
 
-  getTargetDir: () ->
-    return path.join(@conf.targetDir, getRepoName(@conf.repoUrl))
+  assembleCloneUrl: () ->
+    if(!@isHttp)
+      return @conf.repoUrl
 
-  shouldClone: () ->
-    return !Configuration.validators.dirExists(@getTargetDir())
-
-  isPathFromProject: (path) ->
-    root = @conf.contentDir
-    console.log "Configuration::isPathFromProject(#{path})", root
-    return path.indexOf(root) >= 0
-
-  #strip down mapr.com-content path from the given path
-  relativePath: (path) ->
-    root = @conf.contentDir
-    if root.endsWith path.sep
-      root = root.substring(0, root.length-2)
-    return path.replace(root, '')
+    if @isStringEmpty(@conf.username)
+      return @conf.repoUrl
+    i = @conf.repoUrl.indexOf("//")
+    if i < 0
+      return @conf.repoUrl
+    return @conf.repoUrl.substring(0, i + 2) + @conf.username + ":" + @conf.password + "@" + @conf.repoUrl.substring(i+2)
 
 keys = Object.keys(Configuration.labels)
 module.exports = Configuration

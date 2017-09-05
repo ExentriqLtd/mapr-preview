@@ -10,12 +10,14 @@ module.exports = MaprPreview =
   maprPreviewView: null
   panel: null
   subscriptions: null
-  configuration: null
+  configuration: new Configuration()
   renderingProcessManager: null
   thebutton: null
   previewView: null
 
   consumeToolBar: (getToolBar) ->
+    if !@configuration.isAweConfValid()
+      return
     @toolBar = getToolBar('mapr-preview')
     @toolBar.addSpacer
       priority: 99
@@ -26,7 +28,12 @@ module.exports = MaprPreview =
       tooltip: 'MapR Preview'
       priority: 100
 
+    @thebutton.setEnabled false
+    @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+
   activate: (state) ->
+    if !@configuration.isAweConfValid()
+      return
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
@@ -45,6 +52,14 @@ module.exports = MaprPreview =
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView.destroy
         @previewView = null
+
+    @subscriptions.add atom.workspace.observeActiveTextEditor (editor) => @showButtonIfNeeded editor
+
+    @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+
+  showButtonIfNeeded: (editor) ->
+    path = editor?.getPath()
+    @thebutton?.setEnabled(path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
 
   configure: ->
     console.log 'MaprPreview shown configuration'
@@ -87,7 +102,6 @@ module.exports = MaprPreview =
   preview: ->
     console.log "Do preview"
 
-    @configuration = new Configuration()
     if !(@configuration.exists() && @configuration.isValid())
       @configure()
     else
@@ -126,6 +140,7 @@ module.exports = MaprPreview =
       .then () => @previewView.setFile(cleanedUpPath)
       .fail (error) -> atom.notifications.addError "Error occurred",
         description: error.message
+        @renderingPane.destroy()
 
   doClone: () ->
     conf = @configuration.get()
