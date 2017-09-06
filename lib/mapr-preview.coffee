@@ -132,9 +132,10 @@ module.exports = MaprPreview =
       @configuration.save()
       @hideConfigure()
 
-      # @preview()
-      atom.notifications.addInfo("MapR.com project is being downloaded")
-      @doClone()
+      projectCloned = !@configuration.shouldClone()
+      if !projectCloned
+        atom.notifications.addInfo("MapR.com project is being downloaded. Atom will restart afterwards.")
+        @doClone()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
