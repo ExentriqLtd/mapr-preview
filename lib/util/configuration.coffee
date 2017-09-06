@@ -107,6 +107,9 @@ class Configuration
     # console.log "configuration::set", @conf
     return this
 
+  setValues: (values) ->
+    Object.keys(values).forEach (key) => @conf[key] = values[key]
+
   save: () ->
     console.log "MaprPreview::save", FILE_PATH
     s = CSON.stringify(@conf)
@@ -154,7 +157,7 @@ class Configuration
 
   isPathFromProject: (path) ->
     root = @conf.contentDir
-    console.log "Configuration::isPathFromProject(#{path})", root
+    # console.log "Configuration::isPathFromProject(#{path})", root
     return path.indexOf(root) >= 0
 
   #strip down mapr.com-content path from the given path

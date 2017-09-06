@@ -79,7 +79,7 @@ module.exports = MaprPreview =
   saveConfig: ->
     console.log "MaprPreview Save configuration"
     confValues = @configurationView.readConfiguration()
-    @configuration.set(confValues)
+    @configuration.setValues(confValues)
 
     validationMessages = @configuration.validateAll().map (k) ->
       Configuration.reasons[k]
@@ -110,14 +110,15 @@ module.exports = MaprPreview =
   preview: ->
     console.log "Do preview"
 
-    if !(@configuration.exists() && @configuration.isValid())
-      @configure()
-    else
-      if @configuration.shouldClone()
-        conf = @configuration.get()
-        @doClone(conf.repoUrl, conf.targetDir)
-      else
-        @doPreview()
+    # if !(@configuration.exists() && @configuration.isValid())
+      # @configure()
+    # else
+      # if @configuration.shouldClone()
+        # conf = @configuration.get()
+        # @doClone(conf.repoUrl, conf.targetDir)
+      # else
+        # @doPreview()
+    @doPreview()
 
   doPreview: () ->
     currentPaneItem = atom.workspace.getActivePaneItem()
@@ -151,6 +152,7 @@ module.exports = MaprPreview =
         @renderingPane.destroy()
 
   doClone: () ->
+    console.log "mapr-preview::doClone"
     conf = @configuration.get()
     git.clone conf.repoUrl, @configuration.getTargetDir()
       .then () ->
