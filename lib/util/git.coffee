@@ -81,5 +81,7 @@ module.exports =
     return callGit "pull", returnAsIs
 
   init: (path) ->
+    console.log "git::init", path
     repo = GitRepository.open path
+    console.log repo
     cwd = repo.getWorkingDirectory()

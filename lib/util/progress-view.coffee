@@ -15,5 +15,5 @@ class ProgressView extends FormView
     # console.log @fields, progress
     progress.value = valuePercent
 
-module.exports = document.registerElement 'awe-progress-view',
+module.exports = document.registerElement 'mpw-progress-view',
   prototype: ProgressView.prototype, extends: 'div'

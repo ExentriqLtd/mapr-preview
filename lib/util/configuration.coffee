@@ -152,6 +152,8 @@ class Configuration
   getTargetDir: () ->
     return path.join(@conf.targetDir, getRepoName(@conf.repoUrl))
 
+  getRepoName: getRepoName
+
   shouldClone: () ->
     return !Configuration.validators.dirExists(@getTargetDir())
 

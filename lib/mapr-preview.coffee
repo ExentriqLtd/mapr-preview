@@ -1,11 +1,17 @@
 ConfigurationView = require './configuration-view'
 Configuration = require './util/configuration'
+BitBucketManager = require './util/bitbucket-manager'
 RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
+ProgressView = require './util/progress-view'
+getFolderSize = require('get-folder-size')
 git = require './util/git'
+
+q = require 'q'
 
 # TODO: remove as long as it's merged into master
 THE_BRANCH = "feature/201708/preview"
+FOLDER_SIZE_INTERVAL = 1500
 
 {CompositeDisposable, TextEditor} = require 'atom'
 
@@ -65,8 +71,8 @@ module.exports = MaprPreview =
     else
       projectCloned = !@configuration.shouldClone()
       console.log "Project cloned?", projectCloned
-      git.init(@configuration.getTargetDir())
       if projectCloned
+        git.init(@configuration.getTargetDir())
         #TODO: update THE_BRANCH. It will be removed
         @isBranchRemote(THE_BRANCH)
           .then (isRemote) ->
@@ -82,6 +88,8 @@ module.exports = MaprPreview =
               description: e.message + "\n" + e.stdout
             @ready = false
             @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+      else
+        @doClone()
 
   isBranchRemote: (branch) ->
     return git.getBranches().then (branches) ->
@@ -188,14 +196,87 @@ module.exports = MaprPreview =
 
   doClone: () ->
     console.log "mapr-preview::doClone"
+
+    folderSizeInterval = -1
+    repoSize = -1
+    currentSize = 0
+
+    percentage = (value, max) ->
+      if value < 0
+        return 0
+      if value >= max
+        return max
+      return value / max * 100.0
+
     conf = @configuration.get()
-    git.clone conf.repoUrl, @configuration.getTargetDir()
-      .then () ->
-        # @doPreview()
-        atom.restartApplication()
-      .fail () ->
-        atom.notifications.addError "Error occurred",
+
+    callGitClone = () =>
+      git.clone conf.repoUrl, @configuration.getTargetDir()
+        .then () ->
+          # @doPreview()
+          atom.restartApplication()
+        .fail () ->
+          atom.notifications.addError "Error occurred",
           description: "Unable to download mapr.com project"
+
+    return q.fcall () =>
+      if @isBitbucketRepo()
+        progress = new ProgressView()
+        progress.initialize()
+
+        modal = atom.workspace.addModalPanel
+          item: progress
+          visible: true
+
+        @getBitbucketRepoSize()
+          .then (size) =>
+            repoSize = size
+            promise = callGitClone()
+              .then () ->
+                window.clearInterval folderSizeInterval
+                modal.destroy()
+              .fail () ->
+                window.clearInterval folderSizeInterval
+                modal.destroy()
+
+            folderSizeInterval = window.setInterval () =>
+              @getFolderSize @configuration.getTargetDir()
+                .then (size) ->
+                  currentSize = size
+                  console.log "Cloning", currentSize, repoSize
+                  progress.setProgress percentage(currentSize, repoSize)
+                .fail () -> #maybe not yet there
+            , FOLDER_SIZE_INTERVAL
+            return promise
+
+          .fail (e) =>
+            console.log e
+            modal?.destroy()
+            atom.confirm
+              message: 'Error occurred'
+              detailedMessage: "Unable to gather remote repository size.\nYou may want to try again or check out your configuration."
+              buttons:
+                Configure: => @configure()
+                Retry: => @doClone()
+      else
+        return callGitClone()
 
   isBitbucketRepo: () ->
     @configuration.get().repoUrl.indexOf('bitbucket.org') > 0
+
+  getBitbucketRepoSize: () ->
+    conf = @configuration.get()
+    repoOwner = conf.repoOwner
+    repoName = @configuration.getRepoName conf.repoUrl
+    bm = new BitBucketManager(conf.username, conf.password)
+    return bm.getRepoSize(repoOwner, repoName)
+
+  getFolderSize: (folder) ->
+    deferred = q.defer()
+    getFolderSize folder, (err, size)  ->
+      if err
+        deferred.reject err
+      else
+        deferred.resolve size
+
+    return deferred.promise
