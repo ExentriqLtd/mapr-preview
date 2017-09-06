@@ -125,9 +125,9 @@ class Configuration
     innerAweConf = aweConf.get()
 
     @conf.contentDir = path.join(innerAweConf.cloneDir, getRepoName(innerAweConf.repoUrl))
-    @conf.repoOwner = innerAweConf.repoOwner
-    @conf.username = innerAweConf.repoUsername
-    @conf.password = innerAweConf.password
+    # @conf.repoOwner = innerAweConf.repoOwner
+    # @conf.username = innerAweConf.repoUsername
+    # @conf.password = innerAweConf.password
 
   isAweConfValid: () ->
     aweConf = new AWEConfiguration()
