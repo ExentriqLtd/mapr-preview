@@ -1,5 +1,6 @@
 git = require 'git-promise'
 q = require 'q'
+{ GitRepository } = require 'atom'
 
 logcb = (log, error) ->
   console[if error then 'error' else 'log'] log
@@ -26,15 +27,15 @@ getBranches = -> q.fcall ->
 
   return branches
 
-setProjectIndex = (index) ->
-  repo = undefined
-  cwd = undefined
-  projectIndex = index
-  if atom.project
-    repo = atom.project.getRepositories()[index]
-    cwd = if repo then repo.getWorkingDirectory() #prevent startup errors if repo is undefined
-  return
-setProjectIndex(projectIndex)
+# setProjectIndex = (index) ->
+#   repo = undefined
+#   cwd = undefined
+#   projectIndex = index
+#   if atom.project
+#     repo = atom.project.getRepositories()[index]
+#     cwd = if repo then repo.getWorkingDirectory() #prevent startup errors if repo is undefined
+#   return
+# setProjectIndex(projectIndex)
 
 parseDefault = (data) -> q.fcall ->
   return true
@@ -44,17 +45,20 @@ returnAsIs = (data) -> data
 callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
-  return git(cmd, {cwd: cwd})
+  deferred = q.defer()
+  git(cmd, {cwd: cwd})
     .then (data) ->
       logcb data unless nodatalog
-      return parser(data)
+      deferred.resolve parser(data)
     .fail (e) ->
       logcb e.stdout, true
       logcb e.message, true
-      return
+      deferred.reject e
+
+  return deferred.promise
 
 module.exports =
-  setProjectIndex: setProjectIndex
+  # setProjectIndex: setProjectIndex
 
   getProjectIndex: ->
     return projectIndex
@@ -68,14 +72,14 @@ module.exports =
     return callGit "clone -q #{repo} #{target}", noop
 
   checkout: (branch, remote) ->
-    return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->
-      atomRefresh()
-      return parseDefault(data)
+    return callGit "checkout #{if remote then '--track ' else ''}#{branch}", returnAsIs
 
   fetch: ->
     return callGit "fetch --prune", parseDefault
 
   pull: ->
-    return callGit "pull", (data) ->
-      atomRefresh()
-      return parseDefault(data)
+    return callGit "pull", returnAsIs
+
+  init: (path) ->
+    repo = GitRepository.open path
+    cwd = repo.getWorkingDirectory()

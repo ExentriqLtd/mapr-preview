@@ -4,6 +4,9 @@ RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
 git = require './util/git'
 
+# TODO: remove as long as it's merged into master
+THE_BRANCH = "feature/201708/preview"
+
 {CompositeDisposable, TextEditor} = require 'atom'
 
 module.exports = MaprPreview =
@@ -14,6 +17,7 @@ module.exports = MaprPreview =
   renderingProcessManager: null
   thebutton: null
   previewView: null
+  ready: false
 
   consumeToolBar: (getToolBar) ->
     if !@configuration.isAweConfValid()
@@ -58,10 +62,41 @@ module.exports = MaprPreview =
 
     if !@configuration.exists() || !@configuration.isValid()
       @configure()
+    else
+      projectCloned = !@configuration.shouldClone()
+      console.log "Project cloned?", projectCloned
+      git.init(@configuration.getTargetDir())
+      if projectCloned
+        #TODO: update THE_BRANCH. It will be removed
+        @isBranchRemote(THE_BRANCH)
+          .then (isRemote) ->
+            console.log THE_BRANCH, isRemote
+            git.checkout THE_BRANCH, isRemote
+          .then () ->
+            git.pull()
+          .then () =>
+            @ready = true
+            @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+          .fail (error) =>
+            atom.notifications.addError "Unable to update MapR.com. Preview won't be available.",
+              description: e.message + "\n" + e.stdout
+            @ready = false
+            @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+
+  isBranchRemote: (branch) ->
+    return git.getBranches().then (branches) ->
+      isRemote = branches.remote
+        .filter (b) -> b == 'origin/' + branch
+        .length > 0
+      isLocal = branches.local
+        .filter (b) -> b == branch
+        .length > 0
+      console.log branches, isRemote, isLocal, branch
+      return isRemote && !isLocal
 
   showButtonIfNeeded: (editor) ->
     path = editor?.getPath()
-    @thebutton?.setEnabled(path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
+    @thebutton?.setEnabled(@ready && path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
 
   configure: ->
     console.log 'MaprPreview shown configuration'
