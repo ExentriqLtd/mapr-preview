@@ -1,7 +1,7 @@
 {BufferedProcess} = require('atom')
 q = require 'q'
 request = require 'request'
-POLLING_TIMEOUT = 30000 #milliseconds
+POLLING_TIMEOUT = 45000 #milliseconds
 
 truncatePage = (relativeMdPath) ->
   i = relativeMdPath.lastIndexOf('/')
@@ -12,7 +12,46 @@ class RenderingProcessManager
   constructor: (@maprDir, @contentDir) ->
     console.log @maprDir, @contentDir
 
+  npmInstall: () ->
+    deferred = q.defer()
+
+    errors = []
+    command = "npm"
+    args = ["install"]
+
+    stdout = (output) -> console.log "npm >", output
+
+    stderr = (output) ->
+      console.error "npm >", output
+      errors.push output
+
+    exit = (code) ->
+      console.log("npm exited with #{code}")
+
+      if code && code > 0
+        deferred.reject errors.join "\n"
+      if code == 0
+        deferred.resolve true
+
+    options =
+      cwd: @maprDir
+    process = new BufferedProcess({command, args, options, stdout, stderr, exit})
+
+    return deferred.promise
+
   pagePreview: (relativeMdPath) ->
+    deferred = q.defer()
+
+    if @pageProcess?
+      deferred.reject message: "Rendering process is already running"
+    else
+      @npmInstall()
+        .then () => @_pagePreview(relativeMdPath)
+        .then () -> deferred.resolve true
+
+    return deferred.promise
+
+  _pagePreview: (relativeMdPath) ->
     deferred = q.defer()
     returned = false
     errors = []
@@ -64,6 +103,7 @@ class RenderingProcessManager
       @pageProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
+
 
   killPagePreview: () ->
     @pageProcess?.kill()

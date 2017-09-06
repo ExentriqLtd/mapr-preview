@@ -77,13 +77,15 @@ module.exports = MaprPreview =
         @isBranchRemote(THE_BRANCH)
           .then (isRemote) ->
             console.log THE_BRANCH, isRemote
-            git.checkout THE_BRANCH, isRemote
+            prefix = ''
+            prefix = 'origin/' if isRemote
+            git.checkout "#{prefix}#{THE_BRANCH}", isRemote
           .then () ->
             git.pull()
           .then () =>
             @ready = true
             @showButtonIfNeeded atom.workspace.getActiveTextEditor()
-          .fail (error) =>
+          .fail (e) =>
             atom.notifications.addError "Unable to update MapR.com. Preview won't be available.",
               description: e.message + "\n" + e.stdout
             @ready = false
@@ -150,20 +152,7 @@ module.exports = MaprPreview =
 
   serialize: ->
 
-  preview: ->
-    console.log "Do preview"
-
-    # if !(@configuration.exists() && @configuration.isValid())
-      # @configure()
-    # else
-      # if @configuration.shouldClone()
-        # conf = @configuration.get()
-        # @doClone(conf.repoUrl, conf.targetDir)
-      # else
-        # @doPreview()
-    @doPreview()
-
-  doPreview: () ->
+  preview: () ->
     currentPaneItem = atom.workspace.getActivePaneItem()
     if !currentPaneItem instanceof TextEditor
       return
@@ -213,7 +202,6 @@ module.exports = MaprPreview =
     callGitClone = () =>
       git.clone conf.repoUrl, @configuration.getTargetDir()
         .then () ->
-          # @doPreview()
           atom.restartApplication()
         .fail () ->
           atom.notifications.addError "Error occurred",
