@@ -167,8 +167,8 @@ module.exports = MaprPreview =
       return
 
     path = @configuration.relativePath(path)
-    if path.startsWith '/'
-      path = path.substring(1)
+    # if path.startsWith '/'
+    #   path = path.substring(1)
 
     conf = @configuration.get()
     if !@renderingProcessManager?
@@ -176,13 +176,17 @@ module.exports = MaprPreview =
       # atom.notifications.addInfo "Preview rendering started",
       #   description: "It may take a while. A new tab will open when the preview is ready."
 
-    cleanedUpPath = path.replace(/\\/g,"/").substring(0, path.lastIndexOf '/')
+    cleanedUpPath = path.replace(/\\/g,"/")
+    cleanedUpPath = cleanedUpPath.substring(0, cleanedUpPath.lastIndexOf '/')
+    cleanedUpPath = cleanedUpPath.substring(1) if cleanedUpPath.startsWith '/'
+
     atom.workspace.open("mpw://#{cleanedUpPath}")
       .then (pane) =>
-        console.log pane
         @renderingPane = pane
-      .then () => @renderingProcessManager.pagePreview(path)
-      .then () => @previewView.setFile(cleanedUpPath)
+      .then () =>
+        @renderingProcessManager.pagePreview(path)
+      .then () =>
+        @previewView.setFile(cleanedUpPath)
       .catch (error) ->
         console.log "Rendering process said", error
         atom.notifications.addError "Error occurred",

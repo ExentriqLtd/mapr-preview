@@ -2,15 +2,20 @@
 q = require 'q'
 request = require 'request'
 POLLING_TIMEOUT = 45000 #milliseconds
+POLLING_INTERVAL = 1500
 
 truncatePage = (relativeMdPath) ->
+  relativeMdPath = relativeMdPath.replace(/\\/g, '/')
   i = relativeMdPath.lastIndexOf('/')
-  return relativeMdPath.substring(0, i)
+  relativeMdPath = relativeMdPath.substring(0, i)
+  if relativeMdPath.startsWith '/'
+    relativeMdPath = relativeMdPath.substring(1)
+  return relativeMdPath
 
 class RenderingProcessManager
+  intervalId: -1
 
   constructor: (@maprDir, @contentDir) ->
-    console.log @maprDir, @contentDir
 
   npmInstall: () ->
     deferred = q.defer()
@@ -42,9 +47,6 @@ class RenderingProcessManager
   pagePreview: (relativeMdPath) ->
     deferred = q.defer()
 
-    if relativeMdPath.startsWith '/' || relativeMdPath.startsWith '\\'
-      relativeMdPath = relativeMdPath.substring(1)
-
     if @pageProcess?
       deferred.reject message: "Rendering process is already running"
     else
@@ -59,21 +61,30 @@ class RenderingProcessManager
     deferred = q.defer()
     returned = false
     errors = []
-    intervalId = -1
+    @intervalId = -1
     pollingStarted = -1
+
+    noTrailingSlashPath = truncatePage(relativeMdPath)
+    noTrailingSlashPath = relativeMdPath.substring(1) if noTrailingSlashPath.startsWith '/'
+
     if @pageProcess?
       deferred.reject message: "Rendering process is already running"
     else
       requestOpt =
-        url: "http://localhost:8080/" + truncatePage(relativeMdPath)
+        url: "http://localhost:8080/" + noTrailingSlashPath
         proxy: null
 
       command = "node"
-      args = ["preview.js", "#{relativeMdPath}", "#{@contentDir}"]
+
+      filePath = relativeMdPath
+      if relativeMdPath.startsWith('\\') || relativeMdPath.startsWith('/')
+        filePath = relativeMdPath.substring(1)
+
+      args = ["preview.js", "#{filePath}", "#{@contentDir}"]
       stdout = (output) =>
         # console.log "Got line", output
-        if !returned && intervalId<0 && output.trim().startsWith("[metalsmith-serve]")
-          intervalId = window.setInterval () =>
+        if !returned && @intervalId<0 && output.trim().startsWith("[metalsmith-serve]")
+          @intervalId = window.setInterval () =>
             if pollingStarted < 0
               pollingStarted = new Date().getTime()
             console.log "Polling http status", requestOpt.url
@@ -81,19 +92,18 @@ class RenderingProcessManager
             now = new Date().getTime()
 
             if (now - pollingStarted) <= POLLING_TIMEOUT
-              request requestOpt, (error, response, body) ->
+              request requestOpt, (error, response, body) =>
                 code = response && response.statusCode
                 console.log code
                 if code == 200 && !returned
                   returned = true
-                  window.clearInterval intervalId
+                  @clearInterval()
                   deferred.resolve true
             else if !returned
               returned = true
-              window.clearInterval intervalId
               @killPagePreview()
               deferred.reject message: "Preview process took too much to respond"
-          , 1500
+          , POLLING_INTERVAL
       stderr = (output) ->
         console.error output
         errors.push output
@@ -104,12 +114,18 @@ class RenderingProcessManager
 
       options =
         cwd: @maprDir
+
+      console.log "Going to launch", command, args, options
       @pageProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
 
+  clearInterval: () ->
+    window.clearInterval @intervalId if @intervalId > 0
+    @intervalId = -1
 
   killPagePreview: () ->
+    @clearInterval()
     @npmProcess?.kill()
     @pageProcess?.kill()
     @pageProcess = null
