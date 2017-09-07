@@ -25,6 +25,8 @@ class PreviewView extends HTMLElement
 
   getTitle: () -> return "MapR Preview"
 
+  destroy: () ->
+
 module.exports = document.registerElement('mpw-preview',
   prototype: PreviewView.prototype,
   extends: 'div')

@@ -29,18 +29,21 @@ class RenderingProcessManager
       console.log("npm exited with #{code}")
 
       if code && code > 0
-        deferred.reject errors.join "\n"
+        deferred.reject message:errors.join "\n"
       if code == 0
         deferred.resolve true
 
     options =
       cwd: @maprDir
-    process = new BufferedProcess({command, args, options, stdout, stderr, exit})
+    @npmProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
 
   pagePreview: (relativeMdPath) ->
     deferred = q.defer()
+
+    if relativeMdPath.startsWith '/' || relativeMdPath.startsWith '\\'
+      relativeMdPath = relativeMdPath.substring(1)
 
     if @pageProcess?
       deferred.reject message: "Rendering process is already running"
@@ -48,6 +51,7 @@ class RenderingProcessManager
       @npmInstall()
         .then () => @_pagePreview(relativeMdPath)
         .then () -> deferred.resolve true
+        .fail (e) -> deferred.reject e
 
     return deferred.promise
 
@@ -106,7 +110,9 @@ class RenderingProcessManager
 
 
   killPagePreview: () ->
+    @npmProcess?.kill()
     @pageProcess?.kill()
     @pageProcess = null
+    @npmProcess = null
 
 module.exports = RenderingProcessManager

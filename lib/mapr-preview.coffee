@@ -177,12 +177,16 @@ module.exports = MaprPreview =
       #   description: "It may take a while. A new tab will open when the preview is ready."
 
     cleanedUpPath = path.replace(/\\/g,"/").substring(0, path.lastIndexOf '/')
-    @renderingPane = atom.workspace.open("mpw://#{cleanedUpPath}")
-    @renderingProcessManager.pagePreview(path)
+    atom.workspace.open("mpw://#{cleanedUpPath}")
+      .then (pane) =>
+        console.log pane
+        @renderingPane = pane
+      .then () => @renderingProcessManager.pagePreview(path)
       .then () => @previewView.setFile(cleanedUpPath)
-      .fail (error) -> atom.notifications.addError "Error occurred",
-        description: error.message
-        @renderingPane.destroy()
+      .catch (error) ->
+        console.log "Rendering process said", error
+        atom.notifications.addError "Error occurred",
+          description: error.message
 
   doClone: () ->
     console.log "mapr-preview::doClone"
