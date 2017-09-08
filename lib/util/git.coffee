@@ -69,7 +69,7 @@ module.exports =
   getBranches: getBranches
 
   clone: (repo, target) ->
-    return callGit "clone -q #{repo} #{target}", noop
+    return callGit "clone -q #{repo} \"#{target}\"", noop
 
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", returnAsIs
