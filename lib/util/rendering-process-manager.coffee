@@ -50,10 +50,14 @@ class RenderingProcessManager
     if @pageProcess?
       deferred.reject message: "Rendering process is already running"
     else
-      @npmInstall()
-        .then () => @_pagePreview(relativeMdPath)
-        .then () -> deferred.resolve true
-        .fail (e) -> deferred.reject e
+      @checkNodeEnvironment()
+        .then () =>
+          @npmInstall()
+            .then () => @_pagePreview(relativeMdPath)
+            .then () -> deferred.resolve true
+            .fail (e) -> deferred.reject e
+        .fail (commands) ->
+          deferred.reject message: "Commands #{commands} not found in your PATH. Please double check it, then reboot."
 
     return deferred.promise
 
@@ -130,5 +134,29 @@ class RenderingProcessManager
     @pageProcess?.kill()
     @pageProcess = null
     @npmProcess = null
+
+  checkNodeEnvironment: () ->
+    deferred = q.defer()
+    q.all([@_which("npm"), @_which("node")])
+      .then (commands) ->
+        filtered = commands.filter (x) -> x
+        if filtered.length == 0
+          deferred.resolve true
+        else
+          deferred.reject commands.join ', '
+    return deferred.promise
+
+  _which: (command) ->
+    deferred = q.defer()
+    which = require 'which'
+
+    which command, (err, result) ->
+      if err
+        deferred.resolve command
+      else
+        deferred.resolve null
+
+    return deferred.promise
+
 
 module.exports = RenderingProcessManager
