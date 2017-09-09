@@ -47,7 +47,7 @@ class RenderingProcessManager
   pagePreview: (relativeMdPath) ->
     deferred = q.defer()
 
-    if @pageProcess?
+    if @alreadyRunning()
       deferred.reject message: "Rendering process is already running"
     else
       @checkNodeEnvironment()
@@ -158,5 +158,7 @@ class RenderingProcessManager
 
     return deferred.promise
 
+  alreadyRunning: () ->
+    return @npmProcess? || @pageProcess?
 
 module.exports = RenderingProcessManager

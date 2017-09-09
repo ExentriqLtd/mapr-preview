@@ -176,6 +176,10 @@ module.exports = MaprPreview =
       # atom.notifications.addInfo "Preview rendering started",
       #   description: "It may take a while. A new tab will open when the preview is ready."
 
+    if @renderingProcessManager.alreadyRunning()
+      atom.notifications.addWarning("Preview is already running")
+      return
+
     cleanedUpPath = path.replace(/\\/g,"/")
     cleanedUpPath = cleanedUpPath.substring(0, cleanedUpPath.lastIndexOf '/')
     cleanedUpPath = cleanedUpPath.substring(1) if cleanedUpPath.startsWith '/'
