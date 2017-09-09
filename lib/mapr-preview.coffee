@@ -57,7 +57,7 @@ module.exports = MaprPreview =
         return @previewView
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
-      console.log "Destroy pane item", event
+      # console.log "Destroy pane item", event
       if event.item.classList && event.item.classList[0] == "mapr-preview"
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView.destroy
@@ -70,13 +70,13 @@ module.exports = MaprPreview =
       @configure()
     else
       projectCloned = !@configuration.shouldClone()
-      console.log "Project cloned?", projectCloned
+      # console.log "Project cloned?", projectCloned
       if projectCloned
         git.init(@configuration.getTargetDir())
         #TODO: update THE_BRANCH. It will be removed
         @isBranchRemote(THE_BRANCH)
           .then (isRemote) ->
-            console.log THE_BRANCH, isRemote
+            # console.log THE_BRANCH, isRemote
             prefix = ''
             prefix = 'origin/' if isRemote
             git.checkout "#{prefix}#{THE_BRANCH}", isRemote
@@ -101,7 +101,7 @@ module.exports = MaprPreview =
       isLocal = branches.local
         .filter (b) -> b == branch
         .length > 0
-      console.log branches, isRemote, isLocal, branch
+      # console.log branches, isRemote, isLocal, branch
       return isRemote && !isLocal
 
   showButtonIfNeeded: (editor) ->
@@ -109,7 +109,7 @@ module.exports = MaprPreview =
     @thebutton?.setEnabled(@ready && path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
 
   configure: ->
-    console.log 'MaprPreview shown configuration'
+    # console.log 'MaprPreview shown configuration'
 
     if !(@configuration.exists() && @configuration.isValid())
       @configuration.acquireFromAwe()
@@ -122,7 +122,7 @@ module.exports = MaprPreview =
     @panel.show()
 
   saveConfig: ->
-    console.log "MaprPreview Save configuration"
+    # console.log "MaprPreview Save configuration"
     confValues = @configurationView.readConfiguration()
     @configuration.setValues(confValues)
 
@@ -141,7 +141,7 @@ module.exports = MaprPreview =
         atom.notifications.addError(msg)
 
   hideConfigure: ->
-    console.log 'MaprPreview hidden configuration'
+    # console.log 'MaprPreview hidden configuration'
     @panel.destroy()
     @panel = null
 
@@ -197,7 +197,7 @@ module.exports = MaprPreview =
           description: error.message
 
   doClone: () ->
-    console.log "mapr-preview::doClone"
+    # console.log "mapr-preview::doClone"
 
     folderSizeInterval = -1
     repoSize = -1
@@ -244,8 +244,9 @@ module.exports = MaprPreview =
               @getFolderSize @configuration.getTargetDir()
                 .then (size) ->
                   currentSize = size
-                  console.log "Cloning", currentSize, repoSize
-                  progress.setProgress percentage(currentSize, repoSize)
+                  percent = percentage(currentSize, repoSize)
+                  console.log "Cloning", currentSize, repoSize, percent, '%'
+                  progress.setProgress percent
                 .fail () -> #maybe not yet there
             , FOLDER_SIZE_INTERVAL
             return promise
