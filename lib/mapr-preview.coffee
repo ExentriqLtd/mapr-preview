@@ -105,6 +105,10 @@ module.exports = MaprPreview =
       return isRemote && !isLocal
 
   showButtonIfNeeded: (editor) ->
+    # console.log "showButtonIfNeeded", editor
+    if !editor
+      @thebutton?.setEnabled false
+      return
     path = editor?.getPath()
     @thebutton?.setEnabled(@ready && path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
 
@@ -184,17 +188,21 @@ module.exports = MaprPreview =
     cleanedUpPath = cleanedUpPath.substring(0, cleanedUpPath.lastIndexOf '/')
     cleanedUpPath = cleanedUpPath.substring(1) if cleanedUpPath.startsWith '/'
 
-    atom.workspace.open("mpw://#{cleanedUpPath}")
-      .then (pane) =>
-        @renderingPane = pane
-      .then () =>
-        @renderingProcessManager.pagePreview(path)
-      .then () =>
-        @previewView.setFile(cleanedUpPath)
-      .catch (error) ->
+    @renderingProcessManager.checkNodeEnvironment()
+      .then (ok) =>
+        atom.workspace.open("mpw://#{cleanedUpPath}")
+          .then (pane) =>
+            @renderingPane = pane
+          .then () =>
+            @renderingProcessManager.pagePreview(path)
+          .then () =>
+            @previewView.setFile(cleanedUpPath)
+          .catch (error) ->
+            console.log "Rendering process said", error
+            atom.notifications.addError "Error occurred", description: error.message
+      .fail (error) ->
         console.log "Rendering process said", error
-        atom.notifications.addError "Error occurred",
-          description: error.message
+        atom.notifications.addError "Error occurred", description: error
 
   doClone: () ->
     # console.log "mapr-preview::doClone"

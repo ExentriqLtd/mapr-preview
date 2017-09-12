@@ -4,6 +4,9 @@ request = require 'request'
 POLLING_TIMEOUT = 45000 #milliseconds
 POLLING_INTERVAL = 1500
 
+NODE_VERSION = major: 6, minor: 5
+NPM_VERSION = major: 3, minor: 8
+
 truncatePage = (relativeMdPath) ->
   relativeMdPath = relativeMdPath.replace(/\\/g, '/')
   i = relativeMdPath.lastIndexOf('/')
@@ -11,6 +14,9 @@ truncatePage = (relativeMdPath) ->
   if relativeMdPath.startsWith '/'
     relativeMdPath = relativeMdPath.substring(1)
   return relativeMdPath
+
+downloadNodeMessage = () ->
+  return "Node #{NODE_VERSION.major}.#{NODE_VERSION.minor}.x or superior is required to provide preview. You can download it here: https://nodejs.org/\n"
 
 class RenderingProcessManager
   intervalId: -1
@@ -57,7 +63,9 @@ class RenderingProcessManager
             .then () -> deferred.resolve true
             .fail (e) -> deferred.reject e
         .fail (commands) ->
-          deferred.reject message: "Commands #{commands} not found in your PATH. Please double check it, then reboot."
+          msg = "Commands #{commands} not found in your PATH. Please double check it, then reboot." if commands.indexOf('download') < 0
+          msg = commands if commands.indexOf('download') >= 0
+          deferred.reject message: msg
 
     return deferred.promise
 
@@ -138,12 +146,15 @@ class RenderingProcessManager
   checkNodeEnvironment: () ->
     deferred = q.defer()
     q.all([@_which("npm"), @_which("node")])
-      .then (commands) ->
+      .then (commands) =>
         filtered = commands.filter (x) -> x
         if filtered.length == 0
-          deferred.resolve true
+          @_checkVersions()
+            .then (result) ->
+              deferred.resolve true if result
+              deferred.reject downloadNodeMessage() if !result
         else
-          deferred.reject commands.join ', '
+          deferred.reject "Unable to find the following commands in your path: #{commands.join ', '}. Unable to provide preview at this time."
     return deferred.promise
 
   _which: (command) ->
@@ -157,6 +168,76 @@ class RenderingProcessManager
         deferred.resolve null
 
     return deferred.promise
+
+  _checkVersions: () ->
+    VERSIONS = [NODE_VERSION, NPM_VERSION]
+    return q.all([@_getVersion('node'), @_getVersion('npm')])
+      .then (versions) =>
+        versions.map (v, i) =>
+          @_compareVersions(VERSIONS[i], v) >= 0
+        .reduce (a, b) ->
+          a && b
+        , true
+
+  _getVersion: (command) ->
+    deferred = q.defer()
+    args = ["--version"]
+    options = {}
+    returned = false
+
+    stdout = (output) =>
+      # console.log output
+      returned = true
+      deferred.resolve @_parseVersion(command, output)
+
+    stderr = (output) ->
+      if !returned
+        returned = true
+        deferred.reject {
+          ok: false
+          command: command
+          major: 0
+          minor: 0
+        }
+
+    exit = (code) ->
+      if !returned
+        returned = true
+        deferred.reject {
+          ok: false
+          command: command
+          major: 0
+          minor: 0
+        }
+
+    proc = new BufferedProcess({command, args, options, stdout, stderr, exit})
+    return deferred.promise
+
+  _parseVersion: (command, versionString) ->
+    ver = versionString.replace('v', '').split('.')
+    return {
+      ok: true
+      command: command
+      major: if ver[0] then Number.parseInt(ver[0]) else 0
+      minor: if ver[1] then Number.parseInt(ver[1]) else 0
+    }
+
+  _compareVersions: (ver1, ver2) ->
+    # console.log "Compare versions", ver1, ver2
+    if ver1.major > ver2.major
+      ret = -1
+    else if ver1.major == ver2.major
+      if ver1.minor > ver2.minor
+        ret = -1
+      else if ver1.minor == ver2.minor
+        ret = 0
+      else
+        ret = 1
+    else
+      ret = 1
+
+    # console.log "->", ret
+    return ret
 
   alreadyRunning: () ->
     return @npmProcess? || @pageProcess?
