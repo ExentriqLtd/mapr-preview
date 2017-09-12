@@ -189,17 +189,21 @@ module.exports = MaprPreview =
     cleanedUpPath = cleanedUpPath.substring(1) if cleanedUpPath.startsWith '/'
 
     @renderingProcessManager.checkNodeEnvironment()
-      .then (ok) =>
-        atom.workspace.open("mpw://#{cleanedUpPath}")
-          .then (pane) =>
-            @renderingPane = pane
-          .then () =>
-            @renderingProcessManager.pagePreview(path)
-          .then () =>
-            @previewView.setFile(cleanedUpPath)
-          .catch (error) ->
-            console.log "Rendering process said", error
-            atom.notifications.addError "Error occurred", description: error.message
+      .then () => @renderingProcessManager.checkPortInUse()
+      .then (inUse) =>
+        if !inUse
+          atom.workspace.open("mpw://#{cleanedUpPath}")
+            .then (pane) =>
+              @renderingPane = pane
+            .then () =>
+              @renderingProcessManager.pagePreview(path)
+            .then () =>
+              @previewView.setFile(cleanedUpPath)
+            .catch (error) ->
+              console.log "Rendering process said", error
+              atom.notifications.addError "Error occurred", description: error.message
+        else
+          atom.notifications.addError "Port 8080 is use", description: "A process is listening to port 8080.\nMake sure you stop it before you launch page preview."
       .fail (error) ->
         console.log "Rendering process said", error
         atom.notifications.addError "Error occurred", description: error

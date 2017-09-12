@@ -1,8 +1,12 @@
 {BufferedProcess} = require('atom')
 q = require 'q'
 request = require 'request'
+tcpPortUsed = require 'tcp-port-used'
+
 POLLING_TIMEOUT = 45000 #milliseconds
 POLLING_INTERVAL = 1500
+
+TCP_PORT = 8080
 
 NODE_VERSION = major: 6, minor: 5
 NPM_VERSION = major: 3, minor: 8
@@ -241,5 +245,8 @@ class RenderingProcessManager
 
   alreadyRunning: () ->
     return @npmProcess? || @pageProcess?
+
+  checkPortInUse: () ->
+    return tcpPortUsed.check(TCP_PORT, '127.0.0.1')
 
 module.exports = RenderingProcessManager
