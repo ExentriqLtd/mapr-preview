@@ -60,7 +60,7 @@ module.exports = MaprPreview =
       # console.log "Destroy pane item", event
       if event.item.classList && event.item.classList[0] == "mapr-preview"
         @renderingProcessManager.killPagePreview()
-        @previewView.destroy() if @previewView.destroy
+        @previewView.destroy() if @previewView?.destroy
         @previewView = null
 
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) => @showButtonIfNeeded editor
