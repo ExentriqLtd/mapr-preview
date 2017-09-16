@@ -1,4 +1,3 @@
-ConfigurationView = require './configuration-view'
 Configuration = require './util/configuration'
 BitBucketManager = require './util/bitbucket-manager'
 RenderingProcessManager = require './util/rendering-process-manager'
@@ -16,8 +15,6 @@ FOLDER_SIZE_INTERVAL = 1500
 {CompositeDisposable, TextEditor} = require 'atom'
 
 module.exports = MaprPreview =
-  maprPreviewView: null
-  panel: null
   subscriptions: null
   configuration: new Configuration()
   renderingProcessManager: null
@@ -117,25 +114,13 @@ module.exports = MaprPreview =
 
     if !(@configuration.exists() && @configuration.isValid())
       @configuration.acquireFromAwe()
+      @configuration.save()
+      @afterConfigure()
 
-    @configurationView = new ConfigurationView(@configuration,
-      () => @saveConfig(),
-      () => @hideConfigure()
-    )
-    @panel = atom.workspace.addTopPanel(item: @configurationView.getElement(), visible: false) if !@panel?
-    @panel.show()
-
-  saveConfig: ->
-    # console.log "MaprPreview Save configuration"
-    confValues = @configurationView.readConfiguration()
-    @configuration.setValues(confValues)
-
+  afterConfigure: ->
     validationMessages = @configuration.validateAll().map (k) ->
       Configuration.reasons[k]
     if validationMessages.length == 0
-      @configuration.save()
-      @hideConfigure()
-
       projectCloned = !@configuration.shouldClone()
       if !projectCloned
         atom.notifications.addInfo("MapR.com project is being downloaded. Atom will restart afterwards.")
@@ -144,15 +129,8 @@ module.exports = MaprPreview =
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
 
-  hideConfigure: ->
-    # console.log 'MaprPreview hidden configuration'
-    @panel.destroy()
-    @panel = null
-
   deactivate: ->
-    @panel?.destroy()
     @subscriptions.dispose()
-    @configurationView?.destroy()
     @renderingProcessManager?.killPagePreview()
 
   serialize: ->
