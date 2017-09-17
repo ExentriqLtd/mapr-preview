@@ -5,6 +5,7 @@ PreviewView = require './preview-view'
 ProgressView = require './util/progress-view'
 getFolderSize = require('get-folder-size')
 git = require './util/git'
+PanelView = require './util/panel-view'
 
 q = require 'q'
 
@@ -47,15 +48,15 @@ module.exports = MaprPreview =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
 
-    @subscriptions.add atom.workspace.addOpener (uri) =>
-      if uri.startsWith 'mpw://'
-        @previewView = new PreviewView()
-        @previewView.initialize()
-        return @previewView
+    # @subscriptions.add atom.workspace.addOpener (uri) =>
+    #   if uri.startsWith 'mpw://'
+    #     @previewView = new PreviewView()
+    #     @previewView.initialize()
+    #     return @previewView
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
-      # console.log "Destroy pane item", event
-      if event.item.classList && event.item.classList[0] == "mapr-preview"
+      console.log "Destroy pane item", event
+      if event.item instanceof PanelView
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView?.destroy
         @previewView = null
@@ -171,7 +172,10 @@ module.exports = MaprPreview =
       .then () => @renderingProcessManager.checkPortInUse()
       .then (inUse) =>
         if !inUse
-          atom.workspace.open("mpw://#{cleanedUpPath}")
+          @previewView = new PreviewView()
+          @previewView.initialize()
+          panelView = new PanelView("MapR Preview", "mpw://#{cleanedUpPath}", @previewView)
+          atom.workspace.open(panelView, {})
             .then (pane) =>
               @renderingPane = pane
             .then () =>
