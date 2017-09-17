@@ -136,12 +136,13 @@ module.exports = MaprPreview =
   serialize: ->
 
   preview: () ->
-    currentPaneItem = atom.workspace.getActivePaneItem()
-    if !currentPaneItem instanceof TextEditor
+    currentEditor = atom.workspace.getActiveTextEditor()
+    if !currentEditor
       return
+    console.log currentEditor
 
-    if currentPaneItem.getPath
-      path = currentPaneItem.getPath()
+    if currentEditor.getPath
+      path = currentEditor.getPath()
     else
       return
 
