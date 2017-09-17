@@ -48,14 +48,8 @@ module.exports = MaprPreview =
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
 
-    # @subscriptions.add atom.workspace.addOpener (uri) =>
-    #   if uri.startsWith 'mpw://'
-    #     @previewView = new PreviewView()
-    #     @previewView.initialize()
-    #     return @previewView
-
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
-      console.log "Destroy pane item", event
+      # console.log "Destroy pane item", event
       if event.item instanceof PanelView
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView?.destroy
@@ -157,8 +151,6 @@ module.exports = MaprPreview =
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
-      # atom.notifications.addInfo "Preview rendering started",
-      #   description: "It may take a while. A new tab will open when the preview is ready."
 
     if @renderingProcessManager.alreadyRunning()
       atom.notifications.addWarning("Preview is already running")
@@ -192,8 +184,6 @@ module.exports = MaprPreview =
         atom.notifications.addError "Error occurred", description: error
 
   doClone: () ->
-    # console.log "mapr-preview::doClone"
-
     folderSizeInterval = -1
     repoSize = -1
     currentSize = 0
