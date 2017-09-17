@@ -40,6 +40,7 @@ module.exports = MaprPreview =
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
   activate: (state) ->
+    console.log "Activating mapr-preview"
     if !@configuration.isAweConfValid()
       return
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
