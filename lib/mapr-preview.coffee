@@ -13,6 +13,9 @@ q = require 'q'
 THE_BRANCH = "feature/201708/preview"
 FOLDER_SIZE_INTERVAL = 1500
 
+ICON_PREVIEW = 'icon-device-desktop'
+ICON_REFRESH = 'icon-sync'
+
 {CompositeDisposable, TextEditor} = require 'atom'
 
 module.exports = MaprPreview =
@@ -37,7 +40,24 @@ module.exports = MaprPreview =
       priority: 100
 
     @thebutton.setEnabled false
+    console.log @thebutton
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+
+  setIconPreview: () ->
+    if !@thebutton?
+      return
+
+    classList = @thebutton.element.classList
+    classList.remove ICON_REFRESH
+    classList.add ICON_PREVIEW
+
+  setIconRefresh: () ->
+    if !@thebutton?
+      return
+
+    classList = @thebutton.element.classList
+    classList.remove ICON_PREVIEW
+    classList.add ICON_REFRESH
 
   activate: (state) ->
     console.log "Activating mapr-preview"
@@ -55,6 +75,7 @@ module.exports = MaprPreview =
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView?.destroy
         @previewView = null
+        @setIconPreview()
 
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) => @showButtonIfNeeded editor
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
@@ -152,6 +173,7 @@ module.exports = MaprPreview =
     conf = @configuration.get()
     if !@renderingProcessManager?
       @renderingProcessManager = new RenderingProcessManager(@configuration.getTargetDir(), conf.contentDir)
+      @setIconRefresh()
 
     if @renderingProcessManager.alreadyRunning()
       atom.notifications.addWarning("Preview is already running")
