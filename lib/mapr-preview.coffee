@@ -139,7 +139,7 @@ module.exports = MaprPreview =
     currentEditor = atom.workspace.getActiveTextEditor()
     if !currentEditor
       return
-    console.log currentEditor
+    # console.log currentEditor
 
     if currentEditor.getPath
       path = currentEditor.getPath()
