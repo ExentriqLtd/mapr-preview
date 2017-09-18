@@ -12,18 +12,19 @@ NODE_VERSION = major: 6, minor: 5
 NPM_VERSION = major: 3, minor: 8
 
 truncatePage = (relativeMdPath) ->
-  relativeMdPath = relativeMdPath.replace(/\\/g, '/')
-  i = relativeMdPath.lastIndexOf('/')
-  relativeMdPath = relativeMdPath.substring(0, i)
-  if relativeMdPath.startsWith '/'
-    relativeMdPath = relativeMdPath.substring(1)
-  return relativeMdPath
+  result = relativeMdPath.replace(/\\/g, '/')
+  i = result.lastIndexOf('/')
+  result = result.substring(0, i)
+  if result.startsWith '/'
+    result = result.substring(1)
+  return result
 
 downloadNodeMessage = () ->
   return "Node #{NODE_VERSION.major}.#{NODE_VERSION.minor}.x or superior is required to provide preview. You can download it here: https://nodejs.org/\n"
 
 class RenderingProcessManager
   intervalId: -1
+  path: null
 
   constructor: (@maprDir, @contentDir) ->
 
@@ -40,8 +41,10 @@ class RenderingProcessManager
       stream = console.error
       if output.indexOf('WARN') > 0
         stream = console.log
+      else
+        errors.push output
+
       stream "npm >", output
-      errors.push output
 
     exit = (code) ->
       console.log("npm exited with #{code}")
@@ -58,21 +61,26 @@ class RenderingProcessManager
     return deferred.promise
 
   pagePreview: (relativeMdPath) ->
+    @path = relativeMdPath
     deferred = q.defer()
 
     if @alreadyRunning()
-      deferred.reject message: "Rendering process is already running"
-    else
-      @checkNodeEnvironment()
-        .then () =>
-          @npmInstall()
-            .then () => @_pagePreview(relativeMdPath)
-            .then () -> deferred.resolve true
-            .fail (e) -> deferred.reject e
-        .fail (commands) ->
-          msg = "Commands #{commands} not found in your PATH. Please double check it, then reboot." if commands.indexOf('download') < 0
-          msg = commands if commands.indexOf('download') >= 0
-          deferred.reject message: msg
+      # deferred.reject message: "Rendering process is already running"
+      @killPagePreview()
+
+    @checkNodeEnvironment()
+      .then () =>
+        @npmInstall()
+          .then () => @_pagePreview(relativeMdPath)
+          .then () -> deferred.resolve true
+          .fail (e) =>
+            @path = null
+            deferred.reject e
+      .fail (commands) ->
+        msg = "Commands #{commands} not found in your PATH. Please double check it, then reboot." if commands.indexOf('download') < 0
+        msg = commands if commands.indexOf('download') >= 0
+        path = null
+        deferred.reject message: msg
 
     return deferred.promise
 
@@ -149,6 +157,7 @@ class RenderingProcessManager
     @pageProcess?.kill()
     @pageProcess = null
     @npmProcess = null
+    @path = null
 
   checkNodeEnvironment: () ->
     deferred = q.defer()

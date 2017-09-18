@@ -14,7 +14,10 @@ class PreviewView extends HTMLElement
     @temporaryPanel.innerText = "Loading..."
     @panelBody.appendChild @temporaryPanel
 
+  getFile: () -> return @file
+
   setFile: (file) ->
+    @file = file
     webview = document.createElement "webview"
 
     webview.id = 'mapr-webview'
