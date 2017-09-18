@@ -37,7 +37,10 @@ class RenderingProcessManager
     stdout = (output) -> console.log "npm >", output
 
     stderr = (output) ->
-      console.error "npm >", output
+      stream = console.error
+      if output.indexOf('WARN') > 0
+        stream = console.log
+      stream "npm >", output
       errors.push output
 
     exit = (code) ->
