@@ -89,7 +89,12 @@ module.exports = MaprPreview =
         @panelView = null
         @setIconPreview()
 
-    @subscriptions.add atom.workspace.observeActiveTextEditor (editor) => @showButtonIfNeeded editor
+    @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
+      @showButtonIfNeeded editor
+      path = editor.getPath()
+      if @configuration.isPathFromProject(path)
+        editor.terminatePendingState()
+        
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
     if !@configuration.exists() || !@configuration.isValid()
