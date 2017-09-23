@@ -91,10 +91,11 @@ module.exports = MaprPreview =
 
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
       @showButtonIfNeeded editor
-      path = editor.getPath()
-      if @configuration.isPathFromProject(path)
-        editor.terminatePendingState()
-        
+      if editor
+        path = editor.getPath()
+        if @configuration.isPathFromProject(path)
+          editor.terminatePendingState()
+
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
     if !@configuration.exists() || !@configuration.isValid()
@@ -141,8 +142,8 @@ module.exports = MaprPreview =
       @thebutton?.setEnabled false
       @setIconPreview()
       return
-    path = editor?.getPath()
-    @thebutton?.setEnabled(@ready && path.endsWith(".md") && @configuration?.isPathFromProject path) if path?
+    path = editor.getPath()
+    @thebutton?.setEnabled(@ready && @configuration?.isPreviewAllowed path)
 
     # If path is the same in preview -> ICON_REFRESH
     # Else -> ICON_PREVIEW

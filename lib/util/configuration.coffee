@@ -8,6 +8,9 @@ AWEConfiguration = require './configuration-adv-web-editor'
 
 FILE_PATH = path.join(app.getPath("userData"), "mapr-preview.cson")
 
+# Project folders with contents allowed in preview
+LOCALES = ['en', 'fr', 'ja', 'ko']
+
 getRepoName = (uri) ->
   tmp = uri.split('/')
   name = tmp[tmp.length-1]
@@ -168,6 +171,26 @@ class Configuration
     if root.endsWith path.sep
       root = root.substring(0, root.length-2)
     return path.replace(root, '')
+
+  isPreviewAllowed: (filePath) ->
+    # console.log 'Is preview allowed?', filePath
+    fromProject = @isPathFromProject(filePath)
+    if !fromProject
+      # console.log 'No, path is not from project'
+      return false
+
+    if !filePath.endsWith '.md'
+      # console.log 'No, it is not a markdown'
+      return false
+
+    folders = @relativePath(filePath).split(path.sep).filter (x) -> x
+    # console.log folders
+    if folders[0] in LOCALES
+      # console.log 'Yep.'
+      return true
+    else
+      # console.log 'Nope.'
+      return false
 
 keys = Object.keys(Configuration.labels)
 module.exports = Configuration
