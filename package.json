@@ -1,13 +1,13 @@
 {
   "name": "mapr-preview",
   "main": "./lib/mapr-preview",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A short description of your package",
   "keywords": [],
   "activationCommands": {
     "atom-workspace": "mapr-preview:toggle"
   },
-  "repository": "https://github.com/atom/mapr-preview",
+  "repository": "https://github.com/ExentriqLtd/mapr-preview",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
