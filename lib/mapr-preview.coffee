@@ -65,6 +65,9 @@ module.exports = MaprPreview =
 
   activate: (state) ->
     console.log "Activating mapr-preview"
+    @configuration.acquireFromAwe()
+    @configuration.save()
+
     if !@configuration.isAweConfValid()
       return
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
@@ -91,23 +94,20 @@ module.exports = MaprPreview =
 
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
-    projectCloned = !@configuration.shouldClone()
-    # console.log "Project cloned?", projectCloned
-    if projectCloned
-      git.init(@configuration.getTargetDir())
-      git.pull()
-      .then () =>
-        @ready = true
-        @showButtonIfNeeded atom.workspace.getActiveTextEditor()
-      .fail (e) =>
-        atom.notifications.addError "Unable to update MapR.com. Preview won't be available.",
-          description: e.message + "\n" + e.stdout
-        @ready = false
-        @showButtonIfNeeded atom.workspace.getActiveTextEditor()
-      .done()
+    git.init(@configuration.getTargetDir())
+    git.pull()
+    .then () =>
+      @ready = true
+      @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+    .fail (e) =>
+      atom.notifications.addError "Unable to update MapR.com. Preview might not work properly.",
+        description: e.message + "\n" + e.stdout
+      @ready = true
+      @showButtonIfNeeded atom.workspace.getActiveTextEditor()
+    .done()
 
   showButtonIfNeeded: (editor) ->
-    # console.log "showButtonIfNeeded", editor
+    # console.log "showButtonIfNeeded", editor, @thebutton, @ready
     if !editor
       @thebutton?.setEnabled false
       @setIconPreview()
@@ -126,20 +126,6 @@ module.exports = MaprPreview =
       @setIconRefresh()
     else
       @setIconPreview()
-
-
-  configure: ->
-    if !(@configuration.exists() && @configuration.isValid())
-      @configuration.acquireFromAwe()
-      @configuration.save()
-      @afterConfigure()
-
-  afterConfigure: ->
-    validationMessages = @configuration.validateAll().map (k) ->
-      Configuration.reasons[k]
-    if validationMessages.length > 0
-      validationMessages.forEach (msg) ->
-        atom.notifications.addError(msg)
 
   deactivate: ->
     @subscriptions.dispose()
