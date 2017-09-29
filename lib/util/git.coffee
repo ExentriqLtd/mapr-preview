@@ -12,7 +12,7 @@ projectIndex = 0
 noop = -> q.fcall -> true
 
 atomRefresh = ->
-  repo.refreshStatus() # not public/in docs
+  # repo.refreshStatus() # not public/in docs
   return
 
 getBranches = -> q.fcall ->
@@ -26,16 +26,6 @@ getBranches = -> q.fcall ->
     branches.remote.push h.replace('refs/remotes/', '')
 
   return branches
-
-# setProjectIndex = (index) ->
-#   repo = undefined
-#   cwd = undefined
-#   projectIndex = index
-#   if atom.project
-#     repo = atom.project.getRepositories()[index]
-#     cwd = if repo then repo.getWorkingDirectory() #prevent startup errors if repo is undefined
-#   return
-# setProjectIndex(projectIndex)
 
 parseDefault = (data) -> q.fcall ->
   return true
@@ -58,24 +48,10 @@ callGit = (cmd, parser, nodatalog) ->
   return deferred.promise
 
 module.exports =
-  # setProjectIndex: setProjectIndex
-
-  getProjectIndex: ->
-    return projectIndex
-
   getRepository: ->
     return repo
 
   getBranches: getBranches
-
-  clone: (repo, target) ->
-    return callGit "clone -q #{repo} \"#{target}\"", noop
-
-  checkout: (branch, remote) ->
-    return callGit "checkout #{if remote then '--track ' else ''}#{branch}", returnAsIs
-
-  fetch: ->
-    return callGit "fetch --prune", parseDefault
 
   pull: ->
     return callGit "pull", returnAsIs
