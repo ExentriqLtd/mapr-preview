@@ -89,7 +89,7 @@ module.exports = MaprPreview =
       @showButtonIfNeeded editor
       if editor
         path = editor.getPath()
-        if @configuration.isPathFromProject(path)
+        if path && @configuration.isPathFromProject(path)
           editor.terminatePendingState()
 
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
@@ -113,7 +113,10 @@ module.exports = MaprPreview =
       @setIconPreview()
       return
     path = editor.getPath()
-    @thebutton?.setEnabled(@ready && @configuration?.isPreviewAllowed path)
+    @thebutton?.setEnabled(path && @ready && @configuration?.isPreviewAllowed path)
+
+    if !path
+      return
 
     # If path is the same in preview -> ICON_REFRESH
     # Else -> ICON_PREVIEW
