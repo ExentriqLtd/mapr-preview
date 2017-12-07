@@ -70,6 +70,9 @@ module.exports = MaprPreview =
 
     if !@configuration.isAweConfValid()
       return
+
+    @configuration.deleteGitLock()
+    
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 

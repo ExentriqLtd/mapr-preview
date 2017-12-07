@@ -1,6 +1,7 @@
 {app} = require 'remote'
 CSON = require('cson')
 path = require('path')
+fs = require('fs')
 
 AWEConfiguration = require './configuration-adv-web-editor'
 
@@ -191,6 +192,11 @@ class Configuration
     else
       # console.log 'Nope.'
       return false
+
+  deleteGitLock: () ->
+    theLock = path.join(@getTargetDir(), '.git', 'index.lock')
+    if fs.existsSync(theLock)
+      fs.unlinkSync(theLock)
 
 keys = Object.keys(Configuration.labels)
 module.exports = Configuration
