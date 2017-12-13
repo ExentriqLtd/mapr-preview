@@ -3,7 +3,7 @@ q = require 'q'
 request = require 'request'
 tcpPortUsed = require 'tcp-port-used'
 
-POLLING_TIMEOUT = 45000 #milliseconds
+POLLING_TIMEOUT = 65000 #milliseconds
 POLLING_INTERVAL = 1500
 
 TCP_PORT = 8080
