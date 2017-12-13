@@ -37,6 +37,7 @@ module.exports = MaprPreview =
       icon: 'device-desktop',
       callback: 'mapr-preview:preview',
       tooltip: 'MapR Preview'
+      label: 'Preview'
       priority: 100
 
     @thebutton.setEnabled false
@@ -72,7 +73,7 @@ module.exports = MaprPreview =
       return
 
     @configuration.deleteGitLock()
-    
+
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
