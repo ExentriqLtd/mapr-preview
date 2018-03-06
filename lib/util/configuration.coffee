@@ -162,7 +162,7 @@ class Configuration
     return path.join(@conf.targetDir, "out")
 
   getTempPreviewStorageDirectory: ->
-    return path.join(@getOutDir(), moment().format("YYYYMMDD-hhmmss"))
+    return path.join(@getOutDir(), moment().format("YYYYMMDD-HHmmss"))
 
   getRepoName: getRepoName
 

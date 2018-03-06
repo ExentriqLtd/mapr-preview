@@ -3,7 +3,7 @@ RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
 git = require './util/git'
 PanelView = require './util/panel-view'
-scrape = require 'website-scraper'
+PreviewArchiver = require './util/preview-archiver'
 
 q = require 'q'
 
@@ -157,15 +157,20 @@ module.exports = MaprPreview =
 
   savePreview: () ->
     console.log "MaprPreview::savePreview", @previewView.getUrl()
-    options =
-      urls: [@previewView.getUrl()],
-      directory: @configuration.getTempPreviewStorageDirectory()
 
-    scrape(options)
-    .then () ->
-      atom.notifications.addInfo("Preview has been saved")
-    .catch (err) ->
-      atom.notifications.addError("Unable to save preview at this time")
+    atom.pickFolder (folders) =>
+      if !folders || folders.length == 0
+        return
+
+      folder = folders[0]
+      archiver = new PreviewArchiver()
+
+      archiver.scrapeAndZip(@previewView.getUrl(), folder)
+      .then (zipDestination) ->
+        atom.notifications.addInfo("Preview has been saved as #{zipDestination}")
+      .catch (err) ->
+        console.error err
+        atom.notifications.addError("Unable to save preview at this time")
 
   preview: () ->
     currentEditor = atom.workspace.getActiveTextEditor()
