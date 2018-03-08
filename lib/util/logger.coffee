@@ -5,12 +5,12 @@ q = require 'q'
 path = require 'path'
 mkdirp = require 'mkdirp'
 sysinfo = require './sysinfo'
-packageInfo = require '../../package.json'
 
 { Directory } = require 'atom'
 
 HttpLogConfiguration = require './http-log-configuration'
 Configuration = require './configuration-adv-web-editor'
+packageInfo = require '../../package.json'
 
 logConf = new HttpLogConfiguration()
 LOG_FILE = "#{packageInfo.name}.log"
@@ -57,9 +57,11 @@ class CustomHttpTransport extends Transport
 
 aweConf = new Configuration()
 cloneDir = aweConf.get().cloneDir
-logDir = path.join(cloneDir, 'logs')
+logDir = path.join(cloneDir, 'logs') if cloneDir?
 
 dirExists = (dir) ->
+  if !dir
+    return false
   d = new Directory(dir)
   return d.existsSync()
 
@@ -68,18 +70,17 @@ buildTransports = () ->
     new winston.transports.Console()
   ]
 
-  if dirExists(cloneDir)
+  cloneDirExists = dirExists(cloneDir)
+
+  if cloneDirExists
+    if !dirExists logDir
+      mkdirp.sync logDir
     transports.push new winston.transports.File({ filename: path.join(logDir, LOG_FILE) })
 
   if logConf.exists()
     transports.push new CustomHttpTransport({ level: 'error', endpoint: logConf.get().endpoint}),
 
   return transports
-
-ld = new Directory(logDir)
-
-if !dirExists logDir
-  mkdirp.sync logDir
 
 logger = new winston.Logger
   level: 'debug',
