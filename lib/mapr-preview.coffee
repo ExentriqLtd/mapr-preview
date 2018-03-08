@@ -4,6 +4,7 @@ PreviewView = require './preview-view'
 git = require './util/git'
 PanelView = require './util/panel-view'
 
+log = require './util/logger'
 q = require 'q'
 
 ICON_PREVIEW = 'icon-device-desktop'
@@ -41,7 +42,7 @@ module.exports = MaprPreview =
       priority: 100
 
     @thebutton.setEnabled false
-    console.log @thebutton
+    # console.log @thebutton
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
   setIconPreview: () ->
@@ -65,7 +66,7 @@ module.exports = MaprPreview =
     classList.add ICON_REFRESH
 
   activate: (state) ->
-    console.log "Activating mapr-preview"
+    log.debug "Activating mapr-preview"
     @configuration.acquireFromAwe()
     @configuration.save()
 
@@ -81,7 +82,7 @@ module.exports = MaprPreview =
     @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
-      # console.log "Destroy pane item", event
+      # log.debug "Destroy pane item", event
       if event.item instanceof PanelView
         @renderingProcessManager.killPagePreview()
         @previewView.destroy() if @previewView?.destroy
@@ -111,7 +112,7 @@ module.exports = MaprPreview =
     .done()
 
   showButtonIfNeeded: (editor) ->
-    # console.log "showButtonIfNeeded", editor, @thebutton, @ready
+    # log.debug "showButtonIfNeeded", editor, @thebutton, @ready
     if !editor
       @thebutton?.setEnabled false
       @setIconPreview()
@@ -144,7 +145,7 @@ module.exports = MaprPreview =
     currentEditor = atom.workspace.getActiveTextEditor()
     if !currentEditor
       return
-    # console.log currentEditor
+    # log.debug currentEditor
 
     if currentEditor.getPath
       path = currentEditor.getPath()
@@ -178,10 +179,10 @@ module.exports = MaprPreview =
           .then () =>
             @previewView.setFile(cleanedUpPath)
           .catch (error) ->
-            console.log "Rendering process said", error
+            log.error "Rendering process said", error
             atom.notifications.addError "Error occurred", description: error.message
       .fail (error) ->
-        console.log "Rendering process said", error
+        log.error "Rendering process said", error
         atom.notifications.addError "Error occurred", description: error
 
   destroyPreviewView: () ->
