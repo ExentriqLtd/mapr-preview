@@ -2,6 +2,7 @@
 CSON = require('cson')
 path = require('path')
 fs = require('fs')
+log = require './logger'
 
 AWEConfiguration = require './configuration-adv-web-editor'
 
@@ -78,14 +79,14 @@ class Configuration
     return @confFile.existsSync()
 
   read: () ->
-    console.log "MaprPreview::read", FILE_PATH
+    log.debug "MaprPreview::read", FILE_PATH
     @confFile = new File(FILE_PATH)
     if @exists()
       try
         @conf = CSON.parseCSONFile(FILE_PATH)
-        # console.log "Read configuration: ", @conf
+        # log.debug "Read configuration: ", @conf
       catch error
-        console.warn "Invalid configuration detected"
+        log.warn "Invalid configuration detected"
         @conf = null
     else
       @confFile.create()
@@ -103,23 +104,23 @@ class Configuration
           ####
       }
 
-    console.log "configuration::get", @conf
+    log.debug "configuration::get", @conf
     return @conf
 
   set: (c) ->
     @conf = c
-    # console.log "configuration::set", @conf
+    # log.debug "configuration::set", @conf
     return this
 
   setValues: (values) ->
     Object.keys(values).forEach (key) => @conf[key] = values[key]
 
   save: () ->
-    console.log "MaprPreview::save", FILE_PATH
+    log.debug "MaprPreview::save", FILE_PATH
     s = CSON.stringify(@conf)
     #@confFile.create().then =>
     @confFile.writeSync(s)
-    # console.log "configuration::save", @conf
+    # log.debug "configuration::save", @conf
 
   acquireFromAwe: () ->
     aweConf = new AWEConfiguration()
@@ -174,23 +175,23 @@ class Configuration
     return path.replace(root, '')
 
   isPreviewAllowed: (filePath) ->
-    # console.log 'Is preview allowed?', filePath
+    # log.debug 'Is preview allowed?', filePath
     fromProject = @isPathFromProject(filePath)
     if !fromProject
-      # console.log 'No, path is not from project'
+      # log.debug 'No, path is not from project'
       return false
 
     if !filePath.endsWith '.md'
-      # console.log 'No, it is not a markdown'
+      # log.debug 'No, it is not a markdown'
       return false
 
     folders = @relativePath(filePath).split(path.sep).filter (x) -> x
-    # console.log folders
+    # log.debug folders
     if folders[0] in LOCALES
-      # console.log 'Yep.'
+      # log.debug 'Yep.'
       return true
     else
-      # console.log 'Nope.'
+      # log.debug 'Nope.'
       return false
 
   deleteGitLock: () ->

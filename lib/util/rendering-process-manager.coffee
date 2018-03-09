@@ -2,6 +2,7 @@
 q = require 'q'
 request = require 'request'
 tcpPortUsed = require 'tcp-port-used'
+log = require './logger'
 
 POLLING_TIMEOUT = 65000 #milliseconds
 POLLING_INTERVAL = 1500
@@ -35,19 +36,19 @@ class RenderingProcessManager
     command = "npm"
     args = ["install"]
 
-    stdout = (output) -> console.log "npm >", output
+    stdout = (output) -> log.debug "npm > #{output}"
 
     stderr = (output) ->
-      stream = console.error
+      stream = log.error
       if output.indexOf('WARN') > 0
-        stream = console.log
+        stream = log.debug
       else
         errors.push output
 
       stream "npm >", output
 
     exit = (code) ->
-      console.log("npm exited with #{code}")
+      log.debug("npm exited with #{code}")
 
       if code && code > 0
         deferred.reject message:errors.join "\n"
@@ -109,19 +110,19 @@ class RenderingProcessManager
 
       args = ["preview.js", "#{filePath}", "#{@contentDir}"]
       stdout = (output) =>
-        # console.log "Got line", output
+        # log.debug "Got line", output
         if !returned && @intervalId<0 && output.trim().startsWith("[metalsmith-serve]")
           @intervalId = window.setInterval () =>
             if pollingStarted < 0
               pollingStarted = new Date().getTime()
-            console.log "Polling http status", requestOpt.url
+            log.debug "Polling http status", requestOpt.url
 
             now = new Date().getTime()
 
             if (now - pollingStarted) <= POLLING_TIMEOUT
               request requestOpt, (error, response, body) =>
                 code = response && response.statusCode
-                console.log code
+                log.debug code
                 if code == 200 && !returned
                   returned = true
                   @clearInterval()
@@ -135,14 +136,14 @@ class RenderingProcessManager
         console.error output
         errors.push output
       exit = (code) ->
-        console.log("pagePreview exited with #{code}")
+        log.debug("pagePreview exited with #{code}")
         if code && code > 0 && !returned
           deferred.reject errors.join "\n"
 
       options =
         cwd: @maprDir
 
-      console.log "Going to launch", command, args, options
+      log.debug "Going to launch", command, args, options
       @pageProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
@@ -202,7 +203,7 @@ class RenderingProcessManager
     returned = false
 
     stdout = (output) =>
-      # console.log output
+      # log.debug output
       returned = true
       deferred.resolve @_parseVersion(command, output)
 
@@ -239,7 +240,7 @@ class RenderingProcessManager
     }
 
   _compareVersions: (ver1, ver2) ->
-    # console.log "Compare versions", ver1, ver2
+    # log.debug "Compare versions", ver1, ver2
     if ver1.major > ver2.major
       ret = -1
     else if ver1.major == ver2.major
@@ -252,7 +253,7 @@ class RenderingProcessManager
     else
       ret = 1
 
-    # console.log "->", ret
+    # log.debug "->", ret
     return ret
 
   alreadyRunning: () ->

@@ -1,9 +1,10 @@
 git = require 'git-promise'
 q = require 'q'
+log = require './logger'
 { GitRepository } = require 'atom'
 
-logcb = (log, error) ->
-  console[if error then 'error' else 'log'] log
+logcb = (msg, error) ->
+  log[if error then 'error' else 'debug'] msg
 
 repo = undefined
 cwd = undefined
@@ -57,7 +58,7 @@ module.exports =
     return callGit "pull", returnAsIs
 
   init: (path) ->
-    console.log "git::init", path
+    log.debug "git::init", path
     repo = GitRepository.open path
-    console.log repo
+    # console.log repo
     cwd = repo.getWorkingDirectory()
