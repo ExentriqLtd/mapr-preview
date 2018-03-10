@@ -67,7 +67,7 @@ class Configuration
     return @confFile.existsSync()
 
   read: () ->
-    console.log "AdvancedWebEditor::read", FILE_PATH
+    # console.log "AdvancedWebEditor::read", FILE_PATH
     @confFile = new File(FILE_PATH)
     if @exists()
       try
@@ -96,7 +96,7 @@ class Configuration
     return @conf.repoUrl.startsWith("http")
 
   save: () ->
-    console.log "AdvancedWebEditor::save", FILE_PATH
+    # console.log "AdvancedWebEditor::save", FILE_PATH
     s = CSON.stringify(@conf)
     #@confFile.create().then =>
     @confFile.writeSync(s)
