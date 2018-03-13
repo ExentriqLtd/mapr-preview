@@ -36,6 +36,10 @@ class PreviewArchiver
   now: () ->
     return moment().format("YYYYMMDD_HHmmss")
 
+  extractName: (url) ->
+    [..., lastPath] = url.split("/")
+    return lastPath
+
   scrapeAndZip: (url, targetDir) ->
     tempDir = @configuration.getTempPreviewStorageDirectory()
 
@@ -46,7 +50,7 @@ class PreviewArchiver
       directory: tempDir
 
     outDir = if !targetDir then @configuration.getOutDir() else targetDir
-    outFile = path.join(outDir, "preview_#{@now()}.zip")
+    outFile = path.join(outDir, "#{@extractName(url)}_#{@now()}.zip")
 
     scrape(options)
     .then () =>
