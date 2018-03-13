@@ -28,6 +28,8 @@ class PreviewView extends HTMLElement
 
   getTitle: () -> return "MapR Preview"
 
+  getUrl: () -> return "http://localhost:8080/#{@file}"
+
   destroy: ->
     @remove() if @parentNode
 

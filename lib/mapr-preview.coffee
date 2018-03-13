@@ -3,6 +3,7 @@ RenderingProcessManager = require './util/rendering-process-manager'
 PreviewView = require './preview-view'
 git = require './util/git'
 PanelView = require './util/panel-view'
+PreviewArchiver = require './util/preview-archiver'
 
 log = require './util/logger'
 q = require 'q'
@@ -23,26 +24,36 @@ module.exports = MaprPreview =
   configuration: new Configuration()
   renderingProcessManager: null
   thebutton: null
+  savebutton: null
   previewView: null
   panelView: null
   ready: false
+  previewReady: false
 
   consumeToolBar: (getToolBar) ->
     if !@configuration.isAweConfValid()
       return
     @toolBar = getToolBar('mapr-preview')
     @toolBar.addSpacer
-      priority: 99
+      priority: 98
 
     @thebutton = @toolBar.addButton
       icon: 'device-desktop',
       callback: 'mapr-preview:preview',
       tooltip: 'MapR Preview'
       label: 'Preview'
+      priority: 99
+
+    @savebutton = @toolBar.addButton
+      icon: 'desktop-download',
+      callback: 'mapr-preview:savePreview',
+      tooltip: 'Save MapR Preview'
+      label: 'Save Preview'
       priority: 100
 
     @thebutton.setEnabled false
-    # console.log @thebutton
+    @savebutton.setEnabled false
+
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
   setIconPreview: () ->
@@ -80,6 +91,7 @@ module.exports = MaprPreview =
 
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:preview': => @preview()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'mapr-preview:savePreview': => @savePreview()
 
     @subscriptions.add atom.workspace.onDidDestroyPaneItem (event) =>
       # log.debug "Destroy pane item", event
@@ -96,6 +108,9 @@ module.exports = MaprPreview =
         path = editor.getPath()
         if path && @configuration.isPathFromProject(path)
           editor.terminatePendingState()
+
+    @subscriptions.add atom.workspace.observeActivePaneItem (paneItem) =>
+      @savebutton?.setEnabled(paneItem instanceof PanelView && @previewReady)
 
     @showButtonIfNeeded atom.workspace.getActiveTextEditor()
 
@@ -141,6 +156,23 @@ module.exports = MaprPreview =
 
   serialize: ->
 
+  savePreview: () ->
+    console.log "MaprPreview::savePreview", @previewView.getUrl()
+
+    atom.pickFolder (folders) =>
+      if !folders || folders.length == 0
+        return
+
+      folder = folders[0]
+      archiver = new PreviewArchiver()
+
+      archiver.scrapeAndZip(@previewView.getUrl(), folder)
+      .then (zipDestination) ->
+        atom.notifications.addInfo("Preview has been saved as #{zipDestination}")
+      .catch (err) ->
+        console.error err
+        atom.notifications.addError("Unable to save preview at this time")
+
   preview: () ->
     currentEditor = atom.workspace.getActiveTextEditor()
     if !currentEditor
@@ -166,25 +198,33 @@ module.exports = MaprPreview =
 
     @renderingProcessManager.checkNodeEnvironment()
       .then () =>
+        @previewReady = false
         if @previewView?
           @destroyPreviewView()
         @previewView = new PreviewView()
         @previewView.initialize()
         @panelView = new PanelView("MapR Preview", "mpw://#{cleanedUpPath}", @previewView)
         atom.workspace.open(@panelView, {})
-          .then (pane) =>
-            @renderingPane = pane
-          .then () =>
-            @renderingProcessManager.pagePreview(path)
-          .then () =>
-            @previewView.setFile(cleanedUpPath)
-          .catch (error) ->
-            log.error "Rendering process said", error
-            atom.notifications.addError "Error occurred", description: error.message
+      .then (pane) =>
+        @renderingPane = pane
+      .then () =>
+        @renderingProcessManager.pagePreview(path)
+      .then () =>
+        @previewReady = true
+        @previewView.setFile(cleanedUpPath)
+        @savebutton?.setEnabled true
+      .catch (error) ->
+        console.log "Rendering process said", error
+        @previewReady = false
+        @savebutton?.setEnabled false
+        atom.notifications.addError "Error occurred", description: error.message
       .fail (error) ->
-        log.error "Rendering process said", error
+        console.log "Rendering process said", error
+        @savebutton?.setEnabled false
+        @previewReady = false
         atom.notifications.addError "Error occurred", description: error
 
   destroyPreviewView: () ->
+    @previewReady = false
     atom.workspace.getPanes().forEach (pane) =>
       pane.destroyItem @panelView

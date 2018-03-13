@@ -3,6 +3,7 @@ CSON = require('cson')
 path = require('path')
 fs = require('fs')
 log = require './logger'
+moment = require('moment')
 
 AWEConfiguration = require './configuration-adv-web-editor'
 
@@ -157,6 +158,12 @@ class Configuration
 
   getTargetDir: () ->
     return path.join(@conf.targetDir, getRepoName(@conf.repoUrl))
+
+  getOutDir: () ->
+    return path.join(@conf.targetDir, "out")
+
+  getTempPreviewStorageDirectory: ->
+    return path.join(@getOutDir(), moment().format("YYYYMMDD-HHmmss"))
 
   getRepoName: getRepoName
 
