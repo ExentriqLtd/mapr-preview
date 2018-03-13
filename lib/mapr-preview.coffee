@@ -4,6 +4,7 @@ PreviewView = require './preview-view'
 git = require './util/git'
 PanelView = require './util/panel-view'
 PreviewArchiver = require './util/preview-archiver'
+nodeVersions = require './util/node-versions'
 
 log = require './util/logger'
 q = require 'q'
@@ -78,6 +79,8 @@ module.exports = MaprPreview =
 
   activate: (state) ->
     log.debug "Activating mapr-preview"
+    log.error "Just a mapr-preview test"
+    
     @configuration.acquireFromAwe()
     @configuration.save()
 
@@ -196,7 +199,7 @@ module.exports = MaprPreview =
 
     cleanedUpPath = cleanupPath(path)
 
-    @renderingProcessManager.checkNodeEnvironment()
+    nodeVersions.checkNodeEnvironment()
       .then () =>
         @previewReady = false
         if @previewView?

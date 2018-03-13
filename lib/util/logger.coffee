@@ -5,6 +5,7 @@ q = require 'q'
 path = require 'path'
 mkdirp = require 'mkdirp'
 sysinfo = require './sysinfo'
+nodeVersions = require './node-versions'
 
 { Directory } = require 'atom'
 
@@ -44,22 +45,26 @@ class CustomHttpTransport extends Transport
         meta: meta
         sysinfo: sysinfo(aweConf)
 
-    console.log "Requesting", options
+    nodeVersions.getNodeVersions().then (versions) ->
+      options.json.sysinfo.node = versions[0]
+      options.json.sysinfo.npm = versions[1]
 
-    request.post options, (error, response, body) ->
-      # console.log body
-      try
-        if error
-          deferred.reject msg: "Error occurred, Resource #{options.url}", err: error
-        else if response && response.statusCode != 200
-          deferred.reject msg: "HTTP error #{response.statusCode}, Resource #{options.url}", code: response.statusCode
-        else
-          if body.response == "ok"
-            deferred.resolve body
+      console.log "Requesting", options
+
+      request.post options, (error, response, body) ->
+        # console.log body
+        try
+          if error
+            deferred.reject msg: "Error occurred, Resource #{options.url}", err: error
+          else if response && response.statusCode != 200
+            deferred.reject msg: "HTTP error #{response.statusCode}, Resource #{options.url}", code: response.statusCode
           else
-            deferred.reject msg: "Invalid response", body:body
-      catch e
-        deferred.reject e
+            if body.response == "ok"
+              deferred.resolve body
+            else
+              deferred.reject msg: "Invalid response", body:body
+        catch e
+          deferred.reject e
 
     return deferred.promise
 
