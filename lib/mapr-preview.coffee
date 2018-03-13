@@ -79,8 +79,8 @@ module.exports = MaprPreview =
 
   activate: (state) ->
     log.debug "Activating mapr-preview"
-    log.error "Just a mapr-preview test"
-    
+    # log.error "Just a mapr-preview test"
+
     @configuration.acquireFromAwe()
     @configuration.save()
 
@@ -160,7 +160,7 @@ module.exports = MaprPreview =
   serialize: ->
 
   savePreview: () ->
-    console.log "MaprPreview::savePreview", @previewView.getUrl()
+    log.debug "MaprPreview::savePreview", @previewView.getUrl()
 
     atom.pickFolder (folders) =>
       if !folders || folders.length == 0
@@ -217,15 +217,16 @@ module.exports = MaprPreview =
         @previewView.setFile(cleanedUpPath)
         @savebutton?.setEnabled true
       .catch (error) ->
-        console.log "Rendering process said", error
+        log.error "Rendering process said", error
         @previewReady = false
         @savebutton?.setEnabled false
         atom.notifications.addError "Error occurred", description: error.message
       .fail (error) ->
-        console.log "Rendering process said", error
+        log.error "Rendering process said", error
         @savebutton?.setEnabled false
         @previewReady = false
         atom.notifications.addError "Error occurred", description: error
+      .done()
 
   destroyPreviewView: () ->
     @previewReady = false
