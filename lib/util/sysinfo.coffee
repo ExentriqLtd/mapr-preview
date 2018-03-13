@@ -23,6 +23,7 @@ sysinfo = () ->
     loadavg: os.loadavg()
     userinfo: os.userInfo()
     config: gatherConfig()
+    atom: atom.getVersion()
   return data
 
 module.exports = sysinfo
