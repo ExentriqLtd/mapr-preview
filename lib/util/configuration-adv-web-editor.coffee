@@ -5,7 +5,7 @@ path = require 'path'
 {File, Directory} = require 'atom'
 FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
 
-class Configuration
+class AWEConfiguration
   @labels:
     repoUrl: "Project Clone URL"
     fullName: "Full Name"
@@ -30,8 +30,8 @@ class Configuration
 
   @validators:
     isValidRepo: (value) ->
-      return Configuration.validators.isNotBlank(value) &&
-        (Configuration.validators.isValidHttp(value) || Configuration.validators.isValidSsh(value))
+      return AWEConfiguration.validators.isNotBlank(value) &&
+        (AWEConfiguration.validators.isValidHttp(value) || AWEConfiguration.validators.isValidSsh(value))
 
     isNotBlank: (value) ->
       return value?.trim?().length > 0
@@ -103,6 +103,7 @@ class Configuration
     # console.log "configuration::save", @conf
 
   isValid: () ->
+    keys = Object.keys(AWEConfiguration.labels)
     allKeys = @conf && Object.keys(@conf).filter (k) ->
       keys.find (j) ->
         k == j
@@ -110,8 +111,8 @@ class Configuration
     return allKeys && @validateAll().length == 0
 
   validateAll: () ->
-    return Object.keys(Configuration.validationRules).map (rule) =>
-      res = Configuration.validationRules[rule](@conf[rule])
+    return Object.keys(AWEConfiguration.validationRules).map (rule) =>
+      res = AWEConfiguration.validationRules[rule](@conf[rule])
       return if res then null else rule
     .filter (x) -> x
 
@@ -129,5 +130,5 @@ class Configuration
       return @conf.repoUrl
     return @conf.repoUrl.substring(0, i + 2) + @conf.username + ":" + @conf.password + "@" + @conf.repoUrl.substring(i+2)
 
-keys = Object.keys(Configuration.labels)
-module.exports = Configuration
+# keys = Object.keys(AWEConfiguration.labels)
+module.exports = AWEConfiguration

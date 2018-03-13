@@ -9,7 +9,7 @@ sysinfo = require './sysinfo'
 { Directory } = require 'atom'
 
 HttpLogConfiguration = require './http-log-configuration'
-Configuration = require './configuration'
+AWEConfiguration = require './configuration-adv-web-editor'
 packageInfo = require '../../package.json'
 
 logConf = new HttpLogConfiguration()
@@ -72,7 +72,7 @@ class CustomHttpTransport extends Transport
     .catch (err) -> console.log "Unable to POST log", err
     .done()
 
-aweConf = new Configuration()
+aweConf = new AWEConfiguration()
 cloneDir = aweConf.get().cloneDir
 logDir = path.join(cloneDir, 'logs') if cloneDir?
 
