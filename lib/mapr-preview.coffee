@@ -119,6 +119,9 @@ module.exports = MaprPreview =
 
     git.init(@configuration.getTargetDir())
     git.pull()
+    .then () ->
+      git.checkout('feature/201708/preview')
+      # git.checkout('master')
     .then () =>
       @ready = true
       @showButtonIfNeeded atom.workspace.getActiveTextEditor()

@@ -57,6 +57,9 @@ module.exports =
   pull: ->
     return callGit "pull", returnAsIs
 
+  checkout: (branch, remote) ->
+    return callGit "checkout #{if remote then '--track ' else ''}#{branch}", returnAsIs
+
   init: (path) ->
     log.debug "git::init", path
     repo = GitRepository.open path
